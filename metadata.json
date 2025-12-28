@@ -1,0 +1,7 @@
+{
+  "name": "Zmanim Ashdod Pro",
+  "description": "Une application élégante pour consulter les horaires de prière juive (Zmanim) à Ashdod, Israël, intégrant la date hébraïque, le Daf Yomi et des visualisations astronomiques en temps réel.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
