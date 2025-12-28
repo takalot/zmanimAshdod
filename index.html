@@ -1,19 +1,26 @@
 
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zmanim Ashdod Pro</title>
+    <title>Zmanim Ashdod Pro - Digital</title>
+    
+    <!-- Scripts & Styles -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
     <style>
         body {
             background-color: #000000;
             color: #ffffff;
             font-family: 'Heebo', sans-serif;
             overflow: hidden;
+            margin: 0;
         }
         .digital-font {
             font-family: 'JetBrains Mono', monospace;
@@ -28,25 +35,214 @@
             background: rgba(251, 206, 7, 0.1) !important;
         }
         .glow-text {
-            text-shadow: 0 0 20px rgba(251, 206, 7, 0.3);
+            text-shadow: 0 0 20px rgba(251, 206, 7, 0.4);
         }
-        /* Hide scrollbar but allow scrolling if needed on small screens */
-        ::-webkit-scrollbar { display: none; }
+        /* Masquer la scrollbar pour le bandeau des zmanim */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
-    <script type="importmap">
+<script type="importmap">
 {
   "imports": {
     "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react-dom": "https://esm.sh/react-dom@^19.2.3",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "d3": "https://esm.sh/d3@^7.9.0"
+    "d3": "https://esm.sh/d3@^7.9.0",
+    "react/": "https://esm.sh/react@^19.2.3/"
   }
 }
 </script>
 </head>
 <body>
     <div id="root"></div>
-    <script type="module" src="index.tsx"></script>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useCallback } = React;
+
+        // --- CONFIGURATION ---
+        const ASHDOD = { lat: 31.8044, lng: 34.6553 };
+        const HEBREW_DAYS = ["יום ראשון", "יום שני", "יום שלישי", "יום רביעי", "יום חמישי", "יום שישי", "שבת"];
+
+        // --- UTILS ---
+        function parseTime(timeStr, baseDate) {
+            const [time, period] = timeStr.split(' ');
+            let [hours, minutes, seconds] = time.split(':').map(Number);
+            if (period === 'PM' && hours !== 12) hours += 12;
+            if (period === 'AM' && hours === 12) hours = 0;
+            const d = new Date(baseDate);
+            d.setHours(hours, minutes, seconds, 0);
+            return d;
+        }
+
+        function formatTime(d) {
+            return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+        }
+
+        // --- COMPONENT ---
+        function App() {
+            const [now, setNow] = useState(new Date());
+            const [data, setData] = useState(null);
+            const [zmanim, setZmanim] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [notifs, setNotifs] = useState([]);
+
+            const loadData = useCallback(async () => {
+                try {
+                    const today = new Date();
+                    const isoDate = today.toISOString().split('T')[0];
+                    const y = today.getFullYear(), m = today.getMonth() + 1, d = today.getDate();
+
+                    const [solarRes, hebDateRes, dailyRes] = await Promise.all([
+                        fetch(`https://api.sunrisesunset.io/json?lat=${ASHDOD.lat}&lng=${ASHDOD.lng}&date=${isoDate}`).then(r => r.json()),
+                        fetch(`https://www.hebcal.com/converter?cfg=json&gy=${y}&gm=${m}&gd=${d}&g2h=1`).then(r => r.json()),
+                        fetch(`https://www.hebcal.com/hebcal?v=1&cfg=json&maj=on&min=on&mod=on&nx=on&year=${y}&month=${m}&ss=on&mf=on&c=off&geo=none&F=on&d=on&heb=on`).then(r => r.json())
+                    ]);
+
+                    const solar = solarRes.results;
+                    const items = dailyRes.items || [];
+                    const daf = items.find(i => i.category === 'dafyomi')?.hebrew || 'לא זמין';
+                    const parasha = items.find(i => i.category === 'parashat')?.hebrew || '';
+
+                    // Calcul Zmanim (Méthode simple Gra)
+                    const sunrise = parseTime(solar.sunrise, today);
+                    const sunset = parseTime(solar.sunset, today);
+                    const dawn = parseTime(solar.dawn, today);
+                    const dusk = parseTime(solar.dusk, today);
+                    const noon = parseTime(solar.solar_noon, today);
+                    const shaah = (sunset.getTime() - sunrise.getTime()) / 12;
+
+                    const list = [
+                        { id: 'alot', label: 'עלות השחר', fullTime: dawn, time: formatTime(dawn) },
+                        { id: 'sunrise', label: 'נץ החמה', fullTime: sunrise, time: formatTime(sunrise) },
+                        { id: 'shema', label: 'סוף זמן שמע', fullTime: new Date(sunrise.getTime() + 3 * shaah), time: formatTime(new Date(sunrise.getTime() + 3 * shaah)) },
+                        { id: 'tefillah', label: 'סוף זמן תפילה', fullTime: new Date(sunrise.getTime() + 4 * shaah), time: formatTime(new Date(sunrise.getTime() + 4 * shaah)) },
+                        { id: 'chatzot', label: 'חצות היום', fullTime: noon, time: formatTime(noon) },
+                        { id: 'mincha_g', label: 'מנחה גדולה', fullTime: new Date(noon.getTime() + 0.5 * shaah), time: formatTime(new Date(noon.getTime() + 0.5 * shaah)) },
+                        { id: 'plag', label: 'פלג המנחה', fullTime: new Date(sunrise.getTime() + 10.75 * shaah), time: formatTime(new Date(sunrise.getTime() + 10.75 * shaah)) },
+                        { id: 'shkia', label: 'שקיעה', fullTime: sunset, time: formatTime(sunset) },
+                        { id: 'tzeit', label: 'צאת הכוכבים', fullTime: dusk, time: formatTime(dusk) }
+                    ];
+
+                    setData({ hebrewDate: hebDateRes, daf, parasha });
+                    setZmanim(list);
+                    setLoading(false);
+                } catch (e) { console.error("Erreur de chargement:", e); }
+            }, []);
+
+            useEffect(() => {
+                loadData();
+                const t = setInterval(() => setNow(new Date()), 1000);
+                return () => clearInterval(t);
+            }, [loadData]);
+
+            const nextZman = useMemo(() => {
+                return zmanim.find(z => z.fullTime > now) || null;
+            }, [zmanim, now]);
+
+            const countdown = useMemo(() => {
+                if (!nextZman) return null;
+                const diff = nextZman.fullTime.getTime() - now.getTime();
+                if (diff > 0 && diff <= 1800000) { // 30 minutes
+                    const m = Math.floor(diff / 60000);
+                    const s = Math.floor((diff % 60000) / 1000);
+                    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                }
+                return null;
+            }, [nextZman, now]);
+
+            if (loading) return (
+                <div className="h-screen flex items-center justify-center bg-black">
+                    <div className="text-yellow-400 font-bold uppercase tracking-[0.5em] animate-pulse">ASHDOD DIGITAL...</div>
+                </div>
+            );
+
+            const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+            const dateStr = now.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '.');
+
+            return (
+                <div className="h-screen flex flex-col items-center justify-between py-2 overflow-hidden select-none">
+                    
+                    {/* Header bar */}
+                    <header className="w-full px-8 py-2 border-b border-white/10 flex flex-row-reverse justify-between items-center text-sm">
+                        <div className="flex flex-row-reverse items-center gap-4">
+                            <span className="text-yellow-400 digital-font font-bold text-lg">{timeStr.slice(0, 5)}</span>
+                            <span className="opacity-20">|</span>
+                            <div className="flex flex-row-reverse gap-2">
+                                <span className="text-blue-400 font-bold">{HEBREW_DAYS[now.getDay()]}</span>
+                                <span className="text-blue-500 font-bold">({data.parasha})</span>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-row-reverse items-center gap-4">
+                            <span className="text-blue-200 font-bold">{data.hebrewDate.hebrew}</span>
+                            <span className="opacity-20">|</span>
+                            <span className="opacity-40">{dateStr}</span>
+                            <span className="opacity-20">|</span>
+                            <div className="flex flex-row-reverse gap-2">
+                                <span className="opacity-40">דף יומי:</span>
+                                <span className="text-green-400 font-bold">{data.daf}</span>
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Main Clock Area */}
+                    <main className="flex-grow flex flex-col items-center justify-center w-full relative">
+                        {nextZman && (
+                            <div className="mb-4 text-center">
+                                <div className="text-white/20 uppercase tracking-[0.3em] text-[10px] font-bold mb-1">הבא בתור</div>
+                                <div className="text-4xl font-bold text-white/90">{nextZman.label}</div>
+                            </div>
+                        )}
+
+                        <div className="text-yellow-400/30 text-[10px] font-bold uppercase tracking-[0.6em] mb-4">HEURE ACTUELLE ASHDOD</div>
+                        <h1 className="text-[14rem] md:text-[22rem] leading-none font-black digital-font text-white glow-text tracking-tighter">
+                            {timeStr}
+                        </h1>
+
+                        {countdown ? (
+                            <div className="mt-8 flex flex-col items-center animate-pulse">
+                                <div className="text-red-500 text-[11px] font-bold uppercase tracking-widest mb-2">décompte avant {nextZman?.label}</div>
+                                <div className="text-8xl digital-font font-bold text-red-500 bg-red-500/10 px-10 py-4 rounded-3xl border border-red-500/40">
+                                    {countdown}
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex gap-4 justify-center mt-12 opacity-50">
+                                <div className="w-16 h-1 bg-yellow-400"></div>
+                                <div className="w-16 h-1 bg-yellow-400"></div>
+                            </div>
+                        )}
+                    </main>
+
+                    {/* Bottom Ribbon */}
+                    <footer className="w-full bg-black/50 backdrop-blur-md border-t border-white/5 py-4 overflow-x-auto no-scrollbar">
+                        <div className="flex flex-row-reverse gap-4 justify-start md:justify-center px-8 min-w-max">
+                            {zmanim.map(z => (
+                                <div 
+                                    key={z.id} 
+                                    onClick={() => setNotifs(p => p.includes(z.id) ? p.filter(x => x !== z.id) : [...p, z.id])}
+                                    className={`zman-card relative cursor-pointer rounded-2xl px-6 py-4 flex flex-col items-center min-w-[140px] ${nextZman?.id === z.id ? 'active-zman' : ''}`}
+                                >
+                                    <span className="text-[11px] text-white/40 font-bold mb-2">{z.label}</span>
+                                    <span className="text-2xl digital-font font-bold text-white">{z.time.slice(0, 5)}</span>
+                                    <span className="text-[10px] digital-font text-white/20 mt-1">{z.time.slice(-2)}</span>
+                                    
+                                    {notifs.includes(z.id) && (
+                                        <div className="absolute top-2 left-2 text-[8px] text-yellow-400">
+                                            <i className="fas fa-bell"></i>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                        <div className="w-full text-center text-[8px] text-white/10 uppercase tracking-[0.4em] mt-4">
+                            ASHOD • METHODE GRA • GPS 31.8N 34.6E
+                        </div>
+                    </footer>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
 </body>
 </html>
