@@ -1,4 +1,3 @@
-
 import { SolarData, Zman } from '../types';
 
 function parseTime(timeStr: string, date: Date): Date {
@@ -14,7 +13,8 @@ function parseTime(timeStr: string, date: Date): Date {
 }
 
 function formatTime(date: Date): string {
-  return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  // Always return HH:mm:ss for consistency with the design
+  return date.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
 }
 
 export function calculateZmanim(solar: SolarData, baseDate: Date): Zman[] {
@@ -27,6 +27,8 @@ export function calculateZmanim(solar: SolarData, baseDate: Date): Zman[] {
   const dayDurationMs = sunset.getTime() - sunrise.getTime();
   const shaahZemanitMs = dayDurationMs / 12;
 
+  // Basic list of core zmanim as seen in the image grid
+  // Fix: Assigning to a variable with explicit Zman[] type prevents literal widening of 'importance'
   const zmanim: Zman[] = [
     {
       id: 'alot',
@@ -56,16 +58,6 @@ export function calculateZmanim(solar: SolarData, baseDate: Date): Zman[] {
       time: formatTime(new Date(sunrise.getTime() + 3 * shaahZemanitMs)),
       description: 'Fin du temps du Chéma',
       icon: 'fa-book-open',
-      importance: 'primary'
-    },
-    {
-      id: 'tefillah',
-      label: 'Zman Tefillah',
-      labelHebrew: 'סוף זמן תפילה',
-      fullTime: new Date(sunrise.getTime() + 4 * shaahZemanitMs),
-      time: formatTime(new Date(sunrise.getTime() + 4 * shaahZemanitMs)),
-      description: 'Fin du temps de la Amida',
-      icon: 'fa-hands-praying',
       importance: 'primary'
     },
     {
@@ -117,8 +109,18 @@ export function calculateZmanim(solar: SolarData, baseDate: Date): Zman[] {
       description: 'Sortie des étoiles',
       icon: 'fa-stars',
       importance: 'primary'
+    },
+    {
+      id: 'chatzot_l',
+      label: 'Chatzot Laila',
+      labelHebrew: 'חצות לילה',
+      fullTime: new Date(noon.getTime() + 12 * 60 * 60 * 1000),
+      time: formatTime(new Date(noon.getTime() + 12 * 60 * 60 * 1000)),
+      description: 'Minuit',
+      icon: 'fa-bed',
+      importance: 'secondary'
     }
   ];
 
-  return zmanim;
+  return zmanim.sort((a, b) => a.fullTime.getTime() - b.fullTime.getTime());
 }

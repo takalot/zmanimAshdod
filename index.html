@@ -20,17 +20,16 @@
             font-family: 'JetBrains Mono', monospace;
         }
         .glow-text {
-            text-shadow: 0 0 20px rgba(251, 206, 7, 0.4);
+            text-shadow: 0 0 30px rgba(251, 206, 7, 0.2);
         }
         .zman-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
             transition: all 0.3s ease;
         }
         .active-zman {
             border-color: #fbce07 !important;
-            background: rgba(251, 206, 7, 0.1) !important;
-            box-shadow: 0 0 15px rgba(251, 206, 7, 0.1);
+            box-shadow: 0 0 10px rgba(251, 206, 7, 0.3);
         }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -43,10 +42,12 @@
             animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
     </style>
-<script type="importmap">
+    <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
+    "react": "https://esm.sh/react@19.0.0",
+    "react-dom": "https://esm.sh/react-dom@19.0.0",
+    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "react/": "https://esm.sh/react@^19.2.3/",
     "d3": "https://esm.sh/d3@^7.9.0"
