@@ -15,7 +15,7 @@ const App: React.FC = () => {
   // User Preferences
   const [visibleIds, setVisibleIds] = useState<string[]>(() => {
     const saved = localStorage.getItem('visibleZmanim_pref');
-    return saved ? JSON.parse(saved) : ['alot', 'sunrise', 'shema', 'tefillah', 'chatzot', 'mincha_g', 'plag', 'shkia', 'tzeit'];
+    return saved ? JSON.parse(saved) : ['alot', 'sunrise', 'shema', 'tefillah', 'chatzot', 'mincha_g', 'plag', 'shkia', 'tzeit', 'chatzot_l'];
   });
   const [reminders, setReminders] = useState<string[]>(() => {
     const saved = localStorage.getItem('zmanReminders_pref');
@@ -64,14 +64,23 @@ const App: React.FC = () => {
     localStorage.setItem('zmanReminders_pref', JSON.stringify(reminders));
   }, [reminders]);
 
-  const nextZman = useMemo(() => zmanim.find(z => z.fullTime > now) || null, [zmanim, now]);
+  const nextZman = useMemo(() => {
+     const sorted = [...zmanim].sort((a,b) => a.fullTime.getTime() - b.fullTime.getTime());
+     return sorted.find(z => z.fullTime > now) || null;
+  }, [zmanim, now]);
 
   const countdown = useMemo(() => {
     if (!nextZman) return null;
     const diff = nextZman.fullTime.getTime() - now.getTime();
-    if (diff > 0 && diff <= 1800000) {
-      const m = Math.floor(diff / 60000);
+    // Threshold changed to 3 hours = 10,800,000 ms
+    if (diff > 0 && diff <= 10800000) {
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
       const s = Math.floor((diff % 60000) / 1000);
+      
+      if (h > 0) {
+          return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+      }
       return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     }
     return null;
@@ -88,7 +97,7 @@ const App: React.FC = () => {
   if (loading && !data) return <div className="h-screen bg-black flex items-center justify-center text-yellow-500 font-bold text-2xl animate-pulse">ASHDOD...</div>;
 
   const timeString = now.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-  const visibleZmanim = zmanim.filter(z => visibleIds.includes(z.id));
+  const visibleZmanim = zmanim.filter(z => visibleIds.includes(z.id)).sort((a,b) => a.fullTime.getTime() - b.fullTime.getTime());
 
   return (
     <div className="h-screen bg-black flex flex-col text-white overflow-hidden select-none">
@@ -99,7 +108,8 @@ const App: React.FC = () => {
           <div className="flex flex-row-reverse items-center gap-6">
             <span className="text-blue-400 text-4xl font-black">{hebrewDays[now.getDay()]}</span>
             <div className="flex flex-col items-end">
-              <span className="text-blue-600 text-3xl font-black">{data.parashaHeb}</span>
+              <span className="text-blue-400/40 text-[10px] font-bold uppercase tracking-widest mb-1">פרשת השבוע</span>
+              <span className="text-blue-600 text-3xl font-black leading-none">{data.parashaHeb}</span>
               <span className="text-blue-600/40 text-sm font-bold uppercase tracking-widest">{data.parashaEng}</span>
             </div>
           </div>
@@ -107,7 +117,7 @@ const App: React.FC = () => {
         <div className="flex flex-row-reverse items-center gap-6 text-2xl font-black">
           <span className="text-blue-200">{data.hebDate}</span>
           <span className="opacity-20">|</span>
-          <span className="text-green-400">דף: {data.daf}</span>
+          <span className="text-green-400">{data.daf}</span>
           <button onClick={() => setShowSettings(true)} className="text-white/20 p-2 hover:text-white transition-all"><i className="fa-solid fa-gear"></i></button>
         </div>
       </header>

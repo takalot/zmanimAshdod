@@ -60,7 +60,13 @@
             text-shadow: 0 0 30px rgba(251, 206, 7, 0.4);
         }
         .glow-red {
-            text-shadow: 0 0 50px rgba(239, 68, 68, 0.6);
+            text-shadow: 0 0 50px rgba(239, 68, 68, 0.8);
+        }
+        .glow-orange {
+            text-shadow: 0 0 50px rgba(249, 115, 22, 0.8);
+        }
+        .glow-green {
+            text-shadow: 0 0 50px rgba(34, 197, 94, 0.8);
         }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
@@ -84,8 +90,8 @@
   "imports": {
     "react": "https://esm.sh/react@^18.2.0",
     "react-dom": "https://esm.sh/react-dom@^18.2.0",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "d3": "https://esm.sh/d3@^7.9.0"
+    "d3": "https://esm.sh/d3@^7.9.0",
+    "react/": "https://esm.sh/react@^19.2.3/"
   }
 }
 </script>
@@ -121,7 +127,6 @@
             const [loading, setLoading] = useState(true);
             const [showSettings, setShowSettings] = useState(false);
             
-            // Preferences state
             const [visibleIds, setVisibleIds] = useState(() => {
                 const saved = localStorage.getItem('visibleZmanim_v4');
                 return saved ? JSON.parse(saved) : ['alot', 'sunrise', 'shema', 'tefillah', 'chatzot', 'mincha_g', 'plag', 'shkia', 'tzeit', 'chatzot_l'];
@@ -137,26 +142,26 @@
                     const iso = today.toISOString().split('T')[0];
                     const y = today.getFullYear(), m = today.getMonth() + 1, d = today.getDate();
 
-                    const solarRes = await fetch(`https://api.sunrisesunset.io/json?lat=${COORDS.lat}&lng=${COORDS.lng}&date=${iso}`).then(r => r.json());
-                    const hebDateRes = await fetch(`https://www.hebcal.com/converter?cfg=json&gy=${y}&gm=${m}&gd=${d}&g2h=1`).then(r => r.json());
-                    
+                    // Calculer samedi prochain pour être sûr d'avoir la Paracha
                     const daysUntilSat = (6 - today.getDay() + 7) % 7;
                     const sat = new Date(today);
                     sat.setDate(today.getDate() + daysUntilSat);
                     const satIso = sat.toISOString().split('T')[0];
 
-                    const hebcalUrl = `https://www.hebcal.com/hebcal?v=1&cfg=json&maj=on&min=on&mod=on&nx=on&year=now&month=now&ss=on&mf=on&c=off&geo=none&F=on&heb=on&s=on`;
-                    const dailyRes = await fetch(hebcalUrl).then(r => r.json());
+                    const [solarRes, hebDateRes, dailyRes] = await Promise.all([
+                        fetch(`https://api.sunrisesunset.io/json?lat=${COORDS.lat}&lng=${COORDS.lng}&date=${iso}`).then(r => r.json()),
+                        fetch(`https://www.hebcal.com/converter?cfg=json&gy=${y}&gm=${m}&gd=${d}&g2h=1`).then(r => r.json()),
+                        fetch(`https://www.hebcal.com/hebcal?v=1&cfg=json&maj=on&min=on&mod=on&nx=on&start=${iso}&end=${satIso}&ss=on&mf=on&c=off&geo=none&F=on&heb=on&s=on`).then(r => r.json())
+                    ]);
 
                     const solar = solarRes.results;
                     const items = dailyRes.items || [];
                     
                     const daf = items.find(i => i.category === 'dafyomi' && i.date === iso)?.hebrew || "---";
                     const parashaEvent = items.find(i => i.category === 'parashat' && i.date === satIso);
-                    const parashaHeb = parashaEvent ? parashaEvent.hebrew : "---";
+                    const parashaHeb = parashaEvent ? parashaEvent.hebrew.replace('פרשת ', '') : "---";
                     const parashaEng = parashaEvent ? parashaEvent.title.replace('Parashat ', '') : "---";
                     
-                    // Fêtes, Roch Hodech, Jeûnes
                     const specialEvents = items.filter(i => 
                         (i.category === 'holiday' || i.category === 'roshchodesh') && i.date === iso
                     );
@@ -173,7 +178,6 @@
                     const noon = parseTime(solar.solar_noon, today);
                     const shaah = (sunset.getTime() - sunrise.getTime()) / 12;
                     
-                    // Chatzot Laila est 12 heures après Chatzot Hayom
                     const chatzotLaila = new Date(noon.getTime() + 12 * 60 * 60 * 1000);
 
                     const list = [
@@ -231,13 +235,24 @@
                 setVisibleIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
             };
 
-            const countdown = useMemo(() => {
+            const countdownData = useMemo(() => {
                 if (!nextZman) return null;
                 const diff = nextZman.fullTime.getTime() - now.getTime();
+                
+                // Déclenchement à 30 minutes (1,800,000 ms)
                 if (diff > 0 && diff <= 1800000) { 
                     const m = Math.floor(diff / 60000);
                     const s = Math.floor((diff % 60000) / 1000);
-                    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                    const timeString = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                    
+                    let colorClass = "text-green-500 glow-green"; // Par défaut Vert (de 30 à 5 min)
+                    if (diff <= 60000) {
+                        colorClass = "text-red-500 glow-red"; // Dernière minute
+                    } else if (diff <= 300000) {
+                        colorClass = "text-orange-500 glow-orange"; // De 5 min à 1 min
+                    }
+                    
+                    return { timeString, colorClass };
                 }
                 return null;
             }, [nextZman, now]);
@@ -263,8 +278,9 @@
                                 <div className="flex flex-row-reverse items-center gap-3 md:gap-6">
                                     <span className="text-blue-400 text-3xl md:text-5xl font-black">{HEBREW_DAYS[now.getDay()]}</span>
                                     <div className="flex flex-col items-end">
-                                        <span className="text-blue-600 text-2xl md:text-4xl font-black whitespace-nowrap leading-none">{data.parashaHeb}</span>
-                                        <span className="text-blue-600/40 text-sm md:text-lg font-bold uppercase tracking-widest">{data.parashaEng}</span>
+                                        <span className="text-blue-400/60 text-[10px] md:text-xs font-black uppercase tracking-[0.2em] mb-1">פרשת השבוע</span>
+                                        <span className="text-white md:text-sky-300 text-2xl md:text-4xl font-black whitespace-nowrap leading-none shadow-sm">{data.parashaHeb}</span>
+                                        <span className="text-sky-300/40 text-sm md:text-lg font-bold uppercase tracking-widest">{data.parashaEng}</span>
                                     </div>
                                 </div>
                                 {data.holidays && data.holidays.length > 0 && (
@@ -280,11 +296,10 @@
                         </div>
 
                         <div className="flex flex-row-reverse items-center gap-4 md:gap-8 text-xl md:text-3xl font-black">
-                            <span className="text-blue-200 whitespace-nowrap">{data.hebrewDate}</span>
+                            <span className="text-sky-200 whitespace-nowrap">{data.hebrewDate}</span>
                             <span className="opacity-20 hidden md:block">|</span>
                             <div className="flex flex-row-reverse items-center gap-2">
-                                <span className="opacity-40 text-lg md:text-xl">דף:</span>
-                                <span className="text-green-400 whitespace-nowrap">{data.daf}</span>
+                                <span className="text-green-400 whitespace-nowrap font-black">{data.daf}</span>
                             </div>
                             <button onClick={() => setShowSettings(true)} className="text-white/20 hover:text-white transition-all hover:rotate-90 p-2">
                                 <i className="fa-solid fa-gear text-2xl"></i>
@@ -294,13 +309,13 @@
 
                     {/* MAIN DISPLAY */}
                     <main className="flex-grow flex flex-col items-center justify-center relative py-1">
-                        {countdown ? (
+                        {countdownData ? (
                             <div className="flex flex-col items-center animate-pulse">
-                                <div className="text-red-500 text-2xl md:text-4xl font-black uppercase tracking-[0.4em] mb-4">
+                                <div className={`${countdownData.colorClass.split(' ')[0]} text-2xl md:text-4xl font-black uppercase tracking-[0.4em] mb-4`}>
                                     {nextZman?.label} בעוד
                                 </div>
-                                <div className="text-[12rem] md:text-[22rem] leading-none digital-font font-black text-red-500 glow-red">
-                                    {countdown}
+                                <div className={`text-[12rem] md:text-[22rem] leading-none digital-font font-black ${countdownData.colorClass}`}>
+                                    {countdownData.timeString}
                                 </div>
                                 <div className="mt-4 text-2xl md:text-5xl text-white/30 digital-font font-bold uppercase tracking-widest">
                                     TIME: {curTime}
