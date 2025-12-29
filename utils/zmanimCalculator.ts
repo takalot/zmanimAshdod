@@ -1,3 +1,4 @@
+
 import { SolarData, Zman } from '../types';
 
 function parseTime(timeStr: string, date: Date): Date {
@@ -13,7 +14,6 @@ function parseTime(timeStr: string, date: Date): Date {
 }
 
 function formatTime(date: Date): string {
-  // Always return HH:mm:ss for consistency with the design
   return date.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
 }
 
@@ -26,9 +26,8 @@ export function calculateZmanim(solar: SolarData, baseDate: Date): Zman[] {
 
   const dayDurationMs = sunset.getTime() - sunrise.getTime();
   const shaahZemanitMs = dayDurationMs / 12;
+  const chatzotLaila = new Date(noon.getTime() + 12 * 60 * 60 * 1000);
 
-  // Basic list of core zmanim as seen in the image grid
-  // Fix: Assigning to a variable with explicit Zman[] type prevents literal widening of 'importance'
   const zmanim: Zman[] = [
     {
       id: 'alot',
@@ -58,6 +57,16 @@ export function calculateZmanim(solar: SolarData, baseDate: Date): Zman[] {
       time: formatTime(new Date(sunrise.getTime() + 3 * shaahZemanitMs)),
       description: 'Fin du temps du Chéma',
       icon: 'fa-book-open',
+      importance: 'primary'
+    },
+    {
+      id: 'tefillah',
+      label: 'Shacharit Tefillah',
+      labelHebrew: 'סוף זמן תפילה',
+      fullTime: new Date(sunrise.getTime() + 4 * shaahZemanitMs),
+      time: formatTime(new Date(sunrise.getTime() + 4 * shaahZemanitMs)),
+      description: 'Fin du temps de la Amida',
+      icon: 'fa-praying-hands',
       importance: 'primary'
     },
     {
@@ -114,9 +123,9 @@ export function calculateZmanim(solar: SolarData, baseDate: Date): Zman[] {
       id: 'chatzot_l',
       label: 'Chatzot Laila',
       labelHebrew: 'חצות לילה',
-      fullTime: new Date(noon.getTime() + 12 * 60 * 60 * 1000),
-      time: formatTime(new Date(noon.getTime() + 12 * 60 * 60 * 1000)),
-      description: 'Minuit',
+      fullTime: chatzotLaila,
+      time: formatTime(chatzotLaila),
+      description: 'Minuit halakhique',
       icon: 'fa-bed',
       importance: 'secondary'
     }

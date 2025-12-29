@@ -7,13 +7,20 @@ import { calculateZmanim } from './utils/zmanimCalculator';
 
 const App: React.FC = () => {
   const [now, setNow] = useState(new Date());
-  const [solarData, setSolarData] = useState<SolarData | null>(null);
-  const [hebrewDate, setHebrewDate] = useState<HebrewDateData | null>(null);
-  const [extraData, setExtraData] = useState({ daf: '', dafHebrew: '', parasha: '', parashaHebrew: '' });
+  const [data, setData] = useState<any>(null);
   const [zmanim, setZmanim] = useState<Zman[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [dayOfWeekHebrew, setDayOfWeekHebrew] = useState('');
+  const [showSettings, setShowSettings] = useState(false);
+
+  // User Preferences
+  const [visibleIds, setVisibleIds] = useState<string[]>(() => {
+    const saved = localStorage.getItem('visibleZmanim_pref');
+    return saved ? JSON.parse(saved) : ['alot', 'sunrise', 'shema', 'tefillah', 'chatzot', 'mincha_g', 'plag', 'shkia', 'tzeit'];
+  });
+  const [reminders, setReminders] = useState<string[]>(() => {
+    const saved = localStorage.getItem('zmanReminders_pref');
+    return saved ? JSON.parse(saved) : [];
+  });
 
   const hebrewDays = ["יום ראשון", "יום שני", "יום שלישי", "יום רביעי", "יום חמישי", "יום שישי", "שבת"];
 
@@ -28,13 +35,15 @@ const App: React.FC = () => {
         fetchDailyData(targetDate)
       ]);
 
-      setSolarData(solar);
-      setHebrewDate(hebDate);
-      setExtraData(daily);
+      setData({
+        hebDate: hebDate.hebrew,
+        parashaHeb: daily.parashaHebrew,
+        parashaEng: daily.parasha,
+        daf: daily.dafHebrew,
+        dateStr: targetDate.toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '.')
+      });
       setZmanim(calculateZmanim(solar, targetDate));
-      setDayOfWeekHebrew(hebrewDays[targetDate.getDay()]);
     } catch (err) {
-      setError("שגיאה בטעינת נתונים");
       console.error(err);
     } finally {
       setLoading(false);
@@ -43,27 +52,24 @@ const App: React.FC = () => {
 
   useEffect(() => {
     loadData(new Date());
-    const timer = setInterval(() => {
-      setNow(new Date());
-    }, 1000);
+    const timer = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(timer);
   }, [loadData]);
 
-  // Find the next upcoming zman
-  const nextZmanIndex = useMemo(() => {
-    if (!zmanim.length) return -1;
-    const sorted = [...zmanim].sort((a, b) => a.fullTime.getTime() - b.fullTime.getTime());
-    const next = sorted.find(z => z.fullTime > now);
-    return next ? zmanim.findIndex(z => z.id === next.id) : -1;
-  }, [zmanim, now]);
+  useEffect(() => {
+    localStorage.setItem('visibleZmanim_pref', JSON.stringify(visibleIds));
+  }, [visibleIds]);
 
-  const nextZman = nextZmanIndex !== -1 ? zmanim[nextZmanIndex] : null;
+  useEffect(() => {
+    localStorage.setItem('zmanReminders_pref', JSON.stringify(reminders));
+  }, [reminders]);
 
-  // Calculate countdown for next zman if within 30 minutes
+  const nextZman = useMemo(() => zmanim.find(z => z.fullTime > now) || null, [zmanim, now]);
+
   const countdown = useMemo(() => {
     if (!nextZman) return null;
     const diff = nextZman.fullTime.getTime() - now.getTime();
-    if (diff > 0 && diff <= 1800000) { // 30 minutes
+    if (diff > 0 && diff <= 1800000) {
       const m = Math.floor(diff / 60000);
       const s = Math.floor((diff % 60000) / 1000);
       return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
@@ -71,103 +77,100 @@ const App: React.FC = () => {
     return null;
   }, [nextZman, now]);
 
-  if (loading && !solarData) {
-    return (
-      <div className="h-screen w-screen flex items-center justify-center bg-black">
-        <div className="w-10 h-10 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
+  const toggleReminder = (id: string) => {
+    setReminders(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const toggleVisibility = (id: string) => {
+    setVisibleIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  if (loading && !data) return <div className="h-screen bg-black flex items-center justify-center text-yellow-500 font-bold text-2xl animate-pulse">ASHDOD...</div>;
 
   const timeString = now.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-  const dateString = now.toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '.');
+  const visibleZmanim = zmanim.filter(z => visibleIds.includes(z.id));
 
   return (
     <div className="h-screen bg-black flex flex-col text-white overflow-hidden select-none">
-      {/* TOP HEADER - AGRANDI (x2) */}
-      <header className="w-full h-28 px-10 flex items-center justify-between border-b border-white/5 bg-black">
-        <div className="flex items-center gap-10">
-          <span className="text-yellow-400 digital-font font-bold text-5xl">{timeString.slice(0, 5)}</span>
-          <div className="flex items-center gap-6 text-2xl font-black">
-            <span className="opacity-20">|</span>
-            <span className="bg-white/10 px-4 py-2 rounded text-white">{dayOfWeekHebrew}</span>
-            <span className="opacity-20">|</span>
-            <span className="text-blue-400">{hebrewDate?.hebrew}</span>
-            <span className="opacity-20">|</span>
-            <div className="flex gap-3">
-              <span className="text-blue-500">{extraData.parashaHebrew}</span>
+      {/* HEADER */}
+      <header className="w-full h-28 px-10 flex flex-row-reverse items-center justify-between border-b border-white/10">
+        <div className="flex flex-row-reverse items-center gap-10">
+          <span className="text-yellow-400 digital-font font-bold text-6xl tracking-tighter">{timeString.slice(0, 5)}</span>
+          <div className="flex flex-row-reverse items-center gap-6">
+            <span className="text-blue-400 text-4xl font-black">{hebrewDays[now.getDay()]}</span>
+            <div className="flex flex-col items-end">
+              <span className="text-blue-600 text-3xl font-black">{data.parashaHeb}</span>
+              <span className="text-blue-600/40 text-sm font-bold uppercase tracking-widest">{data.parashaEng}</span>
             </div>
-            <span className="opacity-20">|</span>
-            <span className="text-white/40">{dateString}</span>
           </div>
         </div>
-
-        <div className="flex items-center gap-6 text-2xl font-black">
+        <div className="flex flex-row-reverse items-center gap-6 text-2xl font-black">
+          <span className="text-blue-200">{data.hebDate}</span>
           <span className="opacity-20">|</span>
-          <span className="text-green-400">דף יומי: <span className="mr-2">{extraData.dafHebrew}</span></span>
+          <span className="text-green-400">דף: {data.daf}</span>
+          <button onClick={() => setShowSettings(true)} className="text-white/20 p-2 hover:text-white transition-all"><i className="fa-solid fa-gear"></i></button>
         </div>
       </header>
 
-      {/* MAIN BODY */}
-      <main className="flex-grow flex flex-col items-center justify-center relative px-4">
-        {!countdown ? (
-          <div className="text-center">
-            {nextZman && (
-              <div className="mb-10">
-                <div className="text-white/20 uppercase tracking-[0.4em] text-xl font-bold mb-4">הזמן הבא</div>
-                <div className="text-yellow-400 text-8xl font-black mb-12">
-                   {nextZman.labelHebrew} ב-{nextZman.time.slice(0, 5)}
-                </div>
-              </div>
-            )}
-            <div className="text-white/30 text-2xl font-bold tracking-[0.6em] uppercase mb-8">
-              שעה נוכחית
-            </div>
-            <div className="digital-font text-[18vw] leading-none font-black tracking-tighter glow-text">
-              {timeString}
-            </div>
+      {/* MAIN */}
+      <main className="flex-grow flex flex-col items-center justify-center px-4">
+        {countdown ? (
+          <div className="flex flex-col items-center animate-pulse">
+            <div className="text-red-500 text-3xl font-black uppercase mb-8 tracking-[0.5em]">{nextZman?.labelHebrew} בעוד</div>
+            <div className="text-[20rem] leading-none digital-font font-black text-red-500 [text-shadow:0_0_50px_rgba(239,68,68,0.5)]">{countdown}</div>
+            <div className="mt-8 text-4xl text-white/40 font-bold uppercase tracking-widest">HEURE: {timeString}</div>
           </div>
         ) : (
-          /* DECOMPTE MASSIF */
-          <div className="flex flex-col items-center justify-center animate-pulse">
-            <div className="text-red-500 text-3xl font-black uppercase tracking-[0.5em] mb-8">
-              {nextZman?.labelHebrew} בעוד
-            </div>
-            <div className="text-[20rem] md:text-[25rem] leading-none digital-font font-black text-red-500 [text-shadow:0_0_50px_rgba(239,68,68,0.5)]">
-              {countdown}
-            </div>
-            <div className="mt-12 text-5xl text-white/40 digital-font font-bold">
-              שעה: {timeString}
-            </div>
+          <div className="text-center">
+            {nextZman && (
+              <div className="mb-8">
+                <div className="text-white/20 uppercase tracking-[0.5em] text-sm font-bold mb-2">Prochain Horaire</div>
+                <div className="text-7xl font-black text-white glow-text">{nextZman.labelHebrew}</div>
+                <div className="text-3xl text-yellow-400 mt-2 font-bold">{nextZman.time.slice(0, 5)}</div>
+              </div>
+            )}
+            <h1 className="text-[14rem] leading-none digital-font font-black tracking-tighter glow-text">{timeString}</h1>
           </div>
         )}
       </main>
 
-      {/* FOOTER ZMANIM GRID */}
-      <footer className="w-full pb-10 px-6">
-        <div className="max-w-[1600px] mx-auto flex flex-row-reverse gap-4 justify-center overflow-x-auto no-scrollbar pb-4">
-          {[...zmanim].map((z) => {
+      {/* FOOTER */}
+      <footer className="w-full pb-8 px-6">
+        <div className="flex flex-row-reverse flex-wrap gap-2 justify-center">
+          {visibleZmanim.map(z => {
             const isActive = nextZman?.id === z.id;
             return (
               <div 
-                key={z.id} 
-                className={`zman-card min-w-[160px] p-6 rounded-2xl flex flex-col items-center justify-center border transition-all ${isActive ? 'active-zman border-yellow-500 bg-yellow-500/10' : 'border-white/10'}`}
+                key={z.id}
+                onClick={() => toggleReminder(z.id)}
+                className={`min-w-[140px] p-4 rounded-2xl flex flex-col items-center border transition-all cursor-pointer relative ${isActive ? 'border-yellow-500 bg-yellow-500/10 shadow-[0_0_15px_rgba(251,206,7,0.3)]' : 'border-white/10 bg-white/5'}`}
               >
-                <span className="text-sm font-bold text-white/40 mb-3 whitespace-nowrap">
-                  {z.labelHebrew}
-                </span>
-                <span className={`digital-font text-3xl font-bold ${isActive ? 'text-yellow-400' : 'text-white'}`}>
-                  {z.time.slice(0, 5)}
-                </span>
-                <span className="text-xs digital-font text-white/20 mt-1">{z.time.slice(-2)}</span>
+                {reminders.includes(z.id) && <i className="fa-solid fa-bell text-[#fbce07] absolute top-2 right-2 text-[10px] animate-bounce"></i>}
+                <span className="text-[10px] font-bold text-white/40 mb-2">{z.labelHebrew}</span>
+                <span className={`digital-font text-3xl font-bold ${isActive ? 'text-yellow-400' : 'text-white'}`}>{z.time.slice(0, 5)}</span>
               </div>
             );
           })}
         </div>
-        <div className="w-full text-center text-[10px] text-white/10 uppercase tracking-[0.5em] mt-4">
-          COORDINATES: {ASHDOD_LOCATION.lat}, {ASHDOD_LOCATION.lng} • METHOD GRA
-        </div>
       </footer>
+
+      {/* SETTINGS MODAL */}
+      {showSettings && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-6 z-50" onClick={() => setShowSettings(false)}>
+          <div className="bg-[#111] border border-white/20 rounded-[2rem] p-10 max-w-xl w-full" onClick={e => e.stopPropagation()}>
+            <h2 className="text-2xl font-black text-yellow-400 mb-8 uppercase text-center tracking-widest">Configuration</h2>
+            <div className="grid grid-cols-2 gap-4">
+              {zmanim.map(z => (
+                <label key={z.id} className={`flex items-center justify-between p-4 rounded-xl cursor-pointer ${visibleIds.includes(z.id) ? 'bg-white/10' : 'bg-white/5 opacity-40'}`}>
+                  <span className="font-bold">{z.labelHebrew}</span>
+                  <input type="checkbox" checked={visibleIds.includes(z.id)} onChange={() => toggleVisibility(z.id)} className="w-6 h-6 accent-yellow-400" />
+                </label>
+              ))}
+            </div>
+            <button onClick={() => setShowSettings(false)} className="mt-10 w-full bg-yellow-400 text-black py-4 rounded-xl font-black text-xl hover:bg-yellow-300">VALIDER</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
