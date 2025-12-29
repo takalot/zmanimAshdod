@@ -160,7 +160,7 @@
                     const daf = items.find(i => i.category === 'dafyomi' && i.date === iso)?.hebrew || "---";
                     const parashaEvent = items.find(i => i.category === 'parashat' && i.date === satIso);
                     const parashaHeb = parashaEvent ? parashaEvent.hebrew.replace('פרשת ', '') : "---";
-                    const parashaEng = parashaEvent ? parashaEvent.title.replace('Parashat ', '') : "---";
+                    
                     
                     const specialEvents = items.filter(i => 
                         (i.category === 'holiday' || i.category === 'roshchodesh') && i.date === iso
