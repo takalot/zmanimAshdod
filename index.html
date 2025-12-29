@@ -73,13 +73,19 @@
             background: linear-gradient(90deg, rgba(251, 206, 7, 0.2), transparent);
             border-right: 3px solid #fbce07;
         }
+        .fast-day-badge {
+            background: linear-gradient(90deg, rgba(239, 68, 68, 0.2), transparent);
+            border-right: 3px solid #ef4444;
+            color: #ef4444 !important;
+        }
     </style>
 <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
-    "d3": "https://esm.sh/d3@^7.9.0",
-    "react/": "https://esm.sh/react@^19.2.3/"
+    "react": "https://esm.sh/react@^18.2.0",
+    "react-dom": "https://esm.sh/react-dom@^18.2.0",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "d3": "https://esm.sh/d3@^7.9.0"
   }
 }
 </script>
@@ -117,11 +123,11 @@
             
             // Preferences state
             const [visibleIds, setVisibleIds] = useState(() => {
-                const saved = localStorage.getItem('visibleZmanim_v3');
+                const saved = localStorage.getItem('visibleZmanim_v4');
                 return saved ? JSON.parse(saved) : ['alot', 'sunrise', 'shema', 'tefillah', 'chatzot', 'mincha_g', 'plag', 'shkia', 'tzeit', 'chatzot_l'];
             });
             const [reminders, setReminders] = useState(() => {
-                const saved = localStorage.getItem('zmanReminders_v3');
+                const saved = localStorage.getItem('zmanReminders_v4');
                 return saved ? JSON.parse(saved) : [];
             });
 
@@ -151,8 +157,14 @@
                     const parashaEng = parashaEvent ? parashaEvent.title.replace('Parashat ', '') : "---";
                     
                     // Fêtes, Roch Hodech, Jeûnes
-                    const holidayEvents = items.filter(i => (i.category === 'holiday' || i.category === 'roshchodesh') && i.date === iso);
-                    const holiday = holidayEvents.length > 0 ? holidayEvents.map(h => h.hebrew).join(' • ') : null;
+                    const specialEvents = items.filter(i => 
+                        (i.category === 'holiday' || i.category === 'roshchodesh') && i.date === iso
+                    );
+                    
+                    const holidayInfo = specialEvents.map(e => ({
+                        text: e.hebrew,
+                        isFast: e.subcat === 'fast' || e.title.toLowerCase().includes('fast') || e.hebrew.includes('צום') || e.hebrew.includes('תענית')
+                    }));
 
                     const sunrise = parseTime(solar.sunrise, today);
                     const sunset = parseTime(solar.sunset, today);
@@ -160,6 +172,8 @@
                     const dusk = parseTime(solar.dusk, today);
                     const noon = parseTime(solar.solar_noon, today);
                     const shaah = (sunset.getTime() - sunrise.getTime()) / 12;
+                    
+                    // Chatzot Laila est 12 heures après Chatzot Hayom
                     const chatzotLaila = new Date(noon.getTime() + 12 * 60 * 60 * 1000);
 
                     const list = [
@@ -175,7 +189,14 @@
                         { id: 'chatzot_l', label: 'חצות לילה', fullTime: chatzotLaila, time: formatTime(chatzotLaila) }
                     ];
 
-                    setData({ hebrewDate: hebDateRes.hebrew, daf, parashaHeb, parashaEng, holiday, dateStr: `${d}.${m}.${y}` });
+                    setData({ 
+                        hebrewDate: hebDateRes.hebrew, 
+                        daf, 
+                        parashaHeb, 
+                        parashaEng, 
+                        holidays: holidayInfo, 
+                        dateStr: `${d}.${m}.${y}` 
+                    });
                     setZmanim(list);
                     setLoading(false);
                 } catch (e) {
@@ -190,11 +211,11 @@
             }, [fetchData]);
 
             useEffect(() => {
-                localStorage.setItem('visibleZmanim_v3', JSON.stringify(visibleIds));
+                localStorage.setItem('visibleZmanim_v4', JSON.stringify(visibleIds));
             }, [visibleIds]);
 
             useEffect(() => {
-                localStorage.setItem('zmanReminders_v3', JSON.stringify(reminders));
+                localStorage.setItem('zmanReminders_v4', JSON.stringify(reminders));
             }, [reminders]);
 
             const nextZman = useMemo(() => {
@@ -234,7 +255,7 @@
                 <div className="h-screen flex flex-col justify-between py-2 px-6 overflow-hidden bg-black text-white">
                     
                     {/* HEADER */}
-                    <header className="flex flex-row-reverse justify-between items-center border-b border-white/10 pb-4 pt-4">
+                    <header className="flex flex-row-reverse justify-between items-start border-b border-white/10 pb-4 pt-4">
                         <div className="flex flex-row-reverse items-center gap-6 md:gap-10">
                             <span className="text-yellow-400 digital-font font-bold text-5xl md:text-7xl tracking-tighter">{curTime.slice(0, 5)}</span>
                             <span className="opacity-20 text-4xl hidden md:block">|</span>
@@ -246,9 +267,13 @@
                                         <span className="text-blue-600/40 text-sm md:text-lg font-bold uppercase tracking-widest">{data.parashaEng}</span>
                                     </div>
                                 </div>
-                                {data.holiday && (
-                                    <div className="holiday-badge px-4 py-1 mt-1 text-yellow-400 font-bold text-lg md:text-2xl animate-pulse">
-                                        {data.holiday}
+                                {data.holidays && data.holidays.length > 0 && (
+                                    <div className="flex flex-col gap-1 items-end mt-1">
+                                        {data.holidays.map((h, i) => (
+                                            <div key={i} className={`px-4 py-1 font-bold text-lg md:text-2xl animate-pulse whitespace-nowrap ${h.isFast ? 'fast-day-badge' : 'holiday-badge text-yellow-400'}`}>
+                                                {h.text}
+                                            </div>
+                                        ))}
                                     </div>
                                 )}
                             </div>
@@ -298,7 +323,7 @@
                         )}
                     </main>
 
-                    {/* FOOTER COMPACT - Visual Fix for wrap and yellow border */}
+                    {/* FOOTER COMPACT */}
                     <footer className="w-full bg-white/5 backdrop-blur-md rounded-2xl py-3 md:py-4 border border-white/10 mb-4 shadow-2xl">
                         <div className="flex flex-row-reverse flex-wrap gap-2 md:gap-3 justify-center px-4">
                             {visibleZmanim.map(z => {
@@ -308,7 +333,7 @@
                                     <div 
                                         key={z.id} 
                                         onClick={() => toggleReminder(z.id)}
-                                        className={`zman-card rounded-xl px-3 py-2 md:px-5 md:py-3 flex flex-col items-center min-w-[95px] md:min-w-[140px] flex-grow md:flex-grow-0 ${isActive ? 'active-zman' : ''}`}
+                                        className={`zman-card rounded-xl px-3 py-2 md:px-5 md:py-3 flex flex-col items-center min-w-[95px] md:min-w-[140px] flex-grow md:flex-grow-0 transition-all ${isActive ? 'active-zman' : ''}`}
                                     >
                                         {hasReminder && <i className="fa-solid fa-bell reminder-icon"></i>}
                                         <span className="text-[9px] md:text-xs text-white/40 font-black mb-1 md:mb-2 whitespace-nowrap uppercase tracking-tighter">{z.label}</span>
@@ -331,7 +356,7 @@
                         <div className="fixed inset-0 modal-overlay z-50 flex items-center justify-center p-6" onClick={() => setShowSettings(false)}>
                             <div className="bg-[#0a0a0a] border border-white/20 rounded-[3rem] p-10 max-w-2xl w-full shadow-[0_0_100px_rgba(0,0,0,0.5)]" onClick={e => e.stopPropagation()}>
                                 <h2 className="text-3xl font-black mb-8 text-yellow-400 text-center uppercase tracking-widest border-b border-white/10 pb-4">Configuration</h2>
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto no-scrollbar">
                                     {zmanim.map(z => (
                                         <label key={z.id} className={`flex items-center justify-between gap-4 p-5 rounded-2xl cursor-pointer transition-all ${visibleIds.includes(z.id) ? 'bg-white/10 border-white/20' : 'bg-white/5 border-transparent opacity-50'} border`}>
                                             <span className="text-xl font-bold">{z.label}</span>
