@@ -48,9 +48,9 @@
 <script type="importmap">
 {
   "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
     "d3": "https://esm.sh/d3@^7.9.0",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3"
+    "react/": "https://esm.sh/react@^19.2.3/"
   }
 }
 </script>
@@ -62,7 +62,7 @@
         const { useState, useEffect, useMemo, useCallback } = React;
 
         // --- CONFIGURATION ---
-        const COORDS = { lat: 31.7946, lng: 35.2158 }; // Coordonnées demandées
+        const COORDS = { lat: 31.7946, lng: 35.2158 };
         const HEBREW_DAYS = ["יום ראשון", "יום שני", "יום שלישי", "יום רביעי", "יום חמישי", "יום שישי", "שבת"];
 
         // --- HELPERS ---
@@ -99,15 +99,20 @@
                     // 2. Date hébraïque
                     const hebDateRes = await fetch(`https://www.hebcal.com/converter?cfg=json&gy=${y}&gm=${m}&gd=${d}&g2h=1`).then(r => r.json());
                     
-                    // 3. Daf & Parasha (on prend une marge de 7 jours pour être sûr d'avoir la Parasha de la semaine)
-                    const dailyRes = await fetch(`https://www.hebcal.com/hebcal?v=1&cfg=json&maj=on&min=on&mod=on&nx=on&year=${y}&month=${m}&ss=on&mf=on&c=off&geo=none&F=on&heb=on`).then(r => r.json());
+                    // 3. Calendrier Hebcal complet (pour Daf et Parasha)
+                    // On demande les événements pour l'année entière pour être sûr d'avoir la parasha de la semaine
+                    const hebcalUrl = `https://www.hebcal.com/hebcal?v=1&cfg=json&maj=on&min=on&mod=on&nx=on&year=now&month=now&ss=on&mf=on&c=off&geo=none&F=on&heb=on&s=on`;
+                    const dailyRes = await fetch(hebcalUrl).then(r => r.json());
 
                     const solar = solarRes.results;
                     const items = dailyRes.items || [];
                     
-                    // Extraction précise
-                    const daf = items.find(i => i.category === 'dafyomi' && i.date === iso)?.hebrew || "טוען...";
-                    const parasha = items.find(i => i.category === 'parashat')?.hebrew || "---";
+                    // Daf du jour
+                    const daf = items.find(i => i.category === 'dafyomi' && i.date === iso)?.hebrew || "לא נמצא";
+                    
+                    // Parasha de la semaine (la prochaine parasha à partir d'aujourd'hui)
+                    const parashaEvent = items.find(i => i.category === 'parashat' && i.date >= iso);
+                    const parasha = parashaEvent ? parashaEvent.hebrew : "---";
 
                     // Calcul des Zmanim (Méthode Gra)
                     const sunrise = parseTime(solar.sunrise, today);
@@ -165,27 +170,27 @@
             const curTime = formatTime(now);
 
             return (
-                <div className="h-screen flex flex-col justify-between py-6 px-10">
+                <div className="h-screen flex flex-col justify-between py-4 px-6 md:px-10">
                     
-                    {/* TOP HEADER XXL */}
-                    <header className="flex flex-row-reverse justify-between items-center border-b border-white/10 pb-8">
-                        <div className="flex flex-row-reverse items-center gap-12">
-                            <span className="text-yellow-400 digital-font font-bold text-6xl">{curTime.slice(0, 5)}</span>
-                            <span className="opacity-20 text-4xl">|</span>
-                            <div className="flex flex-row-reverse gap-4 text-4xl font-black">
+                    {/* TOP HEADER XXL - AGRANDI */}
+                    <header className="flex flex-row-reverse justify-between items-center border-b border-white/10 pb-6">
+                        <div className="flex flex-row-reverse items-center gap-8 md:gap-12">
+                            <span className="text-yellow-400 digital-font font-bold text-5xl md:text-7xl tracking-tighter">{curTime.slice(0, 5)}</span>
+                            <span className="opacity-20 text-4xl hidden md:block">|</span>
+                            <div className="flex flex-row-reverse items-baseline gap-4 text-3xl md:text-5xl font-black">
                                 <span className="text-blue-400">{HEBREW_DAYS[now.getDay()]}</span>
-                                <span className="text-blue-600">({data.parasha})</span>
+                                <span className="text-blue-600 text-2xl md:text-4xl whitespace-nowrap">{data.parasha}</span>
                             </div>
                         </div>
 
-                        <div className="flex flex-row-reverse items-center gap-10 text-4xl font-black">
-                            <span className="text-blue-200">{data.hebrewDate}</span>
-                            <span className="opacity-20">|</span>
-                            <span className="opacity-40 digital-font">{data.dateStr}</span>
-                            <span className="opacity-20">|</span>
-                            <div className="flex flex-row-reverse gap-3">
-                                <span className="opacity-40">דף יומי:</span>
-                                <span className="text-green-400">{data.daf}</span>
+                        <div className="flex flex-row-reverse items-center gap-6 md:gap-10 text-2xl md:text-4xl font-black">
+                            <span className="text-blue-200 whitespace-nowrap">{data.hebrewDate}</span>
+                            <span className="opacity-20 hidden md:block">|</span>
+                            <span className="opacity-40 digital-font text-xl md:text-3xl hidden md:block">{data.dateStr}</span>
+                            <span className="opacity-20 hidden md:block">|</span>
+                            <div className="flex flex-row-reverse items-center gap-3">
+                                <span className="opacity-40 text-xl md:text-2xl">דף:</span>
+                                <span className="text-green-400 whitespace-nowrap">{data.daf}</span>
                             </div>
                         </div>
                     </header>
@@ -194,51 +199,51 @@
                     <main className="flex-grow flex flex-col items-center justify-center relative">
                         {countdown ? (
                             <div className="flex flex-col items-center animate-pulse">
-                                <div className="text-red-500 text-4xl font-black uppercase tracking-[0.4em] mb-6">
+                                <div className="text-red-500 text-3xl md:text-5xl font-black uppercase tracking-[0.4em] mb-4">
                                     {nextZman?.label} בעוד
                                 </div>
-                                <div className="text-[18rem] md:text-[24rem] leading-none digital-font font-black text-red-500 glow-red">
+                                <div className="text-[14rem] md:text-[24rem] leading-none digital-font font-black text-red-500 glow-red">
                                     {countdown}
                                 </div>
-                                <div className="mt-10 text-5xl text-white/30 digital-font font-bold uppercase tracking-widest">
+                                <div className="mt-6 text-3xl md:text-5xl text-white/30 digital-font font-bold uppercase tracking-widest">
                                     HEURE: {curTime}
                                 </div>
                             </div>
                         ) : (
                             <div className="text-center">
                                 {nextZman && (
-                                    <div className="mb-12">
-                                        <div className="text-white/20 uppercase tracking-[0.5em] text-lg font-bold mb-4">Prochain horaire</div>
-                                        <div className="text-8xl font-black text-white glow-text">{nextZman.label}</div>
-                                        <div className="text-4xl text-yellow-400 mt-4 digital-font">{nextZman.time.slice(0, 5)}</div>
+                                    <div className="mb-8 md:mb-12">
+                                        <div className="text-white/20 uppercase tracking-[0.5em] text-sm md:text-lg font-bold mb-2 md:mb-4">Prochain horaire</div>
+                                        <div className="text-5xl md:text-8xl font-black text-white glow-text">{nextZman.label}</div>
+                                        <div className="text-3xl md:text-4xl text-yellow-400 mt-2 md:mt-4 digital-font">{nextZman.time.slice(0, 5)}</div>
                                     </div>
                                 )}
-                                <div className="text-yellow-400/20 text-lg font-bold tracking-[1em] mb-6">HORAIRE ACTUEL</div>
-                                <h1 className="text-[14rem] md:text-[20rem] leading-none font-black digital-font text-white glow-text tracking-tighter">
+                                <div className="text-yellow-400/20 text-sm md:text-lg font-bold tracking-[1em] mb-4 md:mb-6">HORAIRE ACTUEL</div>
+                                <h1 className="text-[10rem] md:text-[20rem] leading-none font-black digital-font text-white glow-text tracking-tighter">
                                     {curTime}
                                 </h1>
                             </div>
                         )}
                     </main>
 
-                    {/* FOOTER ZMANIM STRIP */}
-                    <footer className="w-full bg-white/5 backdrop-blur-xl rounded-3xl py-8 overflow-x-auto no-scrollbar border border-white/10">
-                        <div className="flex flex-row-reverse gap-6 justify-start md:justify-center px-10 min-w-max">
+                    {/* FOOTER ZMANIM STRIP - FLEX WRAP POUR TOUT VOIR */}
+                    <footer className="w-full bg-white/5 backdrop-blur-xl rounded-2xl md:rounded-3xl py-4 md:py-8 border border-white/10 mt-auto">
+                        <div className="flex flex-row-reverse flex-wrap gap-2 md:gap-4 justify-center px-4">
                             {zmanim.map(z => (
                                 <div 
                                     key={z.id} 
-                                    className={`zman-card rounded-3xl px-10 py-6 flex flex-col items-center min-w-[200px] ${nextZman?.id === z.id ? 'active-zman' : ''}`}
+                                    className={`zman-card rounded-xl md:rounded-2xl px-4 py-3 md:px-8 md:py-5 flex flex-col items-center min-w-[110px] md:min-w-[180px] flex-grow md:flex-grow-0 ${nextZman?.id === z.id ? 'active-zman' : ''}`}
                                 >
-                                    <span className="text-lg text-white/40 font-black mb-4">{z.label}</span>
-                                    <span className="text-5xl digital-font font-bold text-white">{z.time.slice(0, 5)}</span>
-                                    <span className="text-sm digital-font text-white/20 mt-2">{z.time.slice(-2)}</span>
+                                    <span className="text-[10px] md:text-sm text-white/40 font-black mb-1 md:mb-3 whitespace-nowrap">{z.label}</span>
+                                    <span className="text-xl md:text-4xl digital-font font-bold text-white tracking-tight">{z.time.slice(0, 5)}</span>
+                                    <span className="text-[8px] md:text-xs digital-font text-white/20 mt-1">{z.time.slice(-2)}</span>
                                 </div>
                             ))}
                         </div>
                     </footer>
 
-                    <div className="text-center text-[10px] text-white/10 uppercase tracking-[0.6em] mt-4 font-bold">
-                        Coordinates: {COORDS.lat}, {COORDS.lng} • Method Gra • Powered by SunRiseSunset.io
+                    <div className="text-center text-[8px] md:text-[10px] text-white/10 uppercase tracking-[0.6em] mt-4 font-bold">
+                        Coordinates: {COORDS.lat}, {COORDS.lng} • Method Gra • Jerusalem Time
                     </div>
                 </div>
             );
