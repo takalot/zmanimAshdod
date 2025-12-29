@@ -35,7 +35,10 @@
             background: rgba(251, 206, 7, 0.1) !important;
         }
         .glow-text {
-            text-shadow: 0 0 20px rgba(251, 206, 7, 0.4);
+            text-shadow: 0 0 30px rgba(251, 206, 7, 0.5);
+        }
+        .glow-red {
+            text-shadow: 0 0 40px rgba(239, 68, 68, 0.6);
         }
         /* Masquer la scrollbar pour le bandeau des zmanim */
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -44,9 +47,9 @@
 <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
     "d3": "https://esm.sh/d3@^7.9.0",
-    "react/": "https://esm.sh/react@^19.2.3/"
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3"
   }
 }
 </script>
@@ -58,7 +61,8 @@
         const { useState, useEffect, useMemo, useCallback } = React;
 
         // --- CONFIGURATION ---
-        const ASHDOD = { lat: 31.8044, lng: 34.6553 };
+        // Coordonnées demandées par l'utilisateur
+        const COORDINATES = { lat: 31.7946, lng: 35.2158 };
         const HEBREW_DAYS = ["יום ראשון", "יום שני", "יום שלישי", "יום רביעי", "יום חמישי", "יום שישי", "שבת"];
 
         // --- UTILS ---
@@ -90,16 +94,25 @@
                     const isoDate = today.toISOString().split('T')[0];
                     const y = today.getFullYear(), m = today.getMonth() + 1, d = today.getDate();
 
+                    // Récupération des données solaires et du calendrier hébraïque
                     const [solarRes, hebDateRes, dailyRes] = await Promise.all([
-                        fetch(`https://api.sunrisesunset.io/json?lat=${ASHDOD.lat}&lng=${ASHDOD.lng}&date=${isoDate}`).then(r => r.json()),
+                        fetch(`https://api.sunrisesunset.io/json?lat=${COORDINATES.lat}&lng=${COORDINATES.lng}&date=${isoDate}`).then(r => r.json()),
                         fetch(`https://www.hebcal.com/converter?cfg=json&gy=${y}&gm=${m}&gd=${d}&g2h=1`).then(r => r.json()),
                         fetch(`https://www.hebcal.com/hebcal?v=1&cfg=json&maj=on&min=on&mod=on&nx=on&year=${y}&month=${m}&ss=on&mf=on&c=off&geo=none&F=on&d=on&heb=on`).then(r => r.json())
                     ]);
 
                     const solar = solarRes.results;
                     const items = dailyRes.items || [];
-                    const daf = items.find(i => i.category === 'dafyomi')?.hebrew || 'לא זמין';
-                    const parasha = items.find(i => i.category === 'parashat')?.hebrew || '';
+                    
+                    // Filtrage précis des événements du jour (pour éviter le Daf de demain ou d'hier)
+                    const todayEvents = items.filter(item => item.date === isoDate);
+                    
+                    const daf = todayEvents.find(i => i.category === 'dafyomi')?.hebrew || 'לא זמין';
+                    
+                    // Parasha est souvent un événement de la semaine entière ou spécifiquement du Chabbat, 
+                    // on cherche le premier événement de catégorie 'parashat' dans la liste mensuelle si pas trouvé aujourd'hui
+                    const parasha = todayEvents.find(i => i.category === 'parashat')?.hebrew || 
+                                    items.find(i => i.category === 'parashat')?.hebrew || '';
 
                     // Calcul Zmanim (Méthode simple Gra)
                     const sunrise = parseTime(solar.sunrise, today);
@@ -158,83 +171,92 @@
             const dateStr = now.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '.');
 
             return (
-                <div className="h-screen flex flex-col items-center justify-between py-2 overflow-hidden select-none">
+                <div className="h-screen flex flex-col items-center justify-between py-4 overflow-hidden select-none">
                     
-                    {/* Header bar */}
-                    <header className="w-full px-8 py-2 border-b border-white/10 flex flex-row-reverse justify-between items-center text-sm">
-                        <div className="flex flex-row-reverse items-center gap-4">
-                            <span className="text-yellow-400 digital-font font-bold text-lg">{timeStr.slice(0, 5)}</span>
+                    {/* Header bar - AGRANDIE (x2) */}
+                    <header className="w-full px-12 py-6 border-b border-white/10 flex flex-row-reverse justify-between items-center text-2xl">
+                        <div className="flex flex-row-reverse items-center gap-8">
+                            <span className="text-yellow-400 digital-font font-bold text-4xl">{timeStr.slice(0, 5)}</span>
                             <span className="opacity-20">|</span>
-                            <div className="flex flex-row-reverse gap-2">
-                                <span className="text-blue-400 font-bold">{HEBREW_DAYS[now.getDay()]}</span>
-                                <span className="text-blue-500 font-bold">({data.parasha})</span>
+                            <div className="flex flex-row-reverse gap-4">
+                                <span className="text-blue-400 font-black">{HEBREW_DAYS[now.getDay()]}</span>
+                                <span className="text-blue-500 font-black">({data.parasha})</span>
                             </div>
                         </div>
 
-                        <div className="flex flex-row-reverse items-center gap-4">
-                            <span className="text-blue-200 font-bold">{data.hebrewDate.hebrew}</span>
+                        <div className="flex flex-row-reverse items-center gap-8">
+                            <span className="text-blue-200 font-black">{data.hebrewDate.hebrew}</span>
                             <span className="opacity-20">|</span>
                             <span className="opacity-40">{dateStr}</span>
                             <span className="opacity-20">|</span>
-                            <div className="flex flex-row-reverse gap-2">
+                            <div className="flex flex-row-reverse gap-3">
                                 <span className="opacity-40">דף יומי:</span>
-                                <span className="text-green-400 font-bold">{data.daf}</span>
+                                <span className="text-green-400 font-black">{data.daf}</span>
                             </div>
                         </div>
                     </header>
 
                     {/* Main Clock Area */}
-                    <main className="flex-grow flex flex-col items-center justify-center w-full relative">
-                        {nextZman && (
-                            <div className="mb-4 text-center">
-                                <div className="text-white/20 uppercase tracking-[0.3em] text-[10px] font-bold mb-1">הבא בתור</div>
-                                <div className="text-4xl font-bold text-white/90">{nextZman.label}</div>
+                    <main className="flex-grow flex flex-col items-center justify-center w-full relative pt-4">
+                        {nextZman && !countdown && (
+                            <div className="mb-6 text-center">
+                                <div className="text-white/20 uppercase tracking-[0.4em] text-xs font-bold mb-2">הבא בתור</div>
+                                <div className="text-6xl font-bold text-white/90">{nextZman.label}</div>
                             </div>
                         )}
 
-                        <div className="text-yellow-400/30 text-[10px] font-bold uppercase tracking-[0.6em] mb-4">HEURE ACTUELLE ASHDOD</div>
-                        <h1 className="text-[14rem] md:text-[22rem] leading-none font-black digital-font text-white glow-text tracking-tighter">
-                            {timeStr}
-                        </h1>
+                        {!countdown && (
+                            <>
+                                <div className="text-yellow-400/30 text-xs font-bold uppercase tracking-[0.8em] mb-6">HORAIRE ACTUEL</div>
+                                <h1 className="text-[14rem] md:text-[22rem] leading-none font-black digital-font text-white glow-text tracking-tighter">
+                                    {timeStr}
+                                </h1>
+                                <div className="flex gap-6 justify-center mt-16 opacity-50">
+                                    <div className="w-24 h-2 bg-yellow-400"></div>
+                                    <div className="w-24 h-2 bg-yellow-400"></div>
+                                </div>
+                            </>
+                        )}
 
-                        {countdown ? (
-                            <div className="mt-8 flex flex-col items-center animate-pulse">
-                                <div className="text-red-500 text-[11px] font-bold uppercase tracking-widest mb-2">décompte avant {nextZman?.label}</div>
-                                <div className="text-8xl digital-font font-bold text-red-500 bg-red-500/10 px-10 py-4 rounded-3xl border border-red-500/40">
+                        {/* Countdown Display - AGRANDI (Massif) */}
+                        {countdown && (
+                            <div className="flex flex-col items-center justify-center animate-pulse">
+                                <div className="text-red-500 text-xl font-bold uppercase tracking-[0.5em] mb-4">
+                                    {nextZman?.label} בעוד
+                                </div>
+                                <div className="text-[15rem] md:text-[20rem] leading-none digital-font font-black text-red-500 glow-red">
                                     {countdown}
                                 </div>
-                            </div>
-                        ) : (
-                            <div className="flex gap-4 justify-center mt-12 opacity-50">
-                                <div className="w-16 h-1 bg-yellow-400"></div>
-                                <div className="w-16 h-1 bg-yellow-400"></div>
+                                <div className="mt-8 text-4xl text-white/40 digital-font font-bold">
+                                    HEURE: {timeStr}
+                                </div>
                             </div>
                         )}
                     </main>
 
                     {/* Bottom Ribbon */}
-                    <footer className="w-full bg-black/50 backdrop-blur-md border-t border-white/5 py-4 overflow-x-auto no-scrollbar">
-                        <div className="flex flex-row-reverse gap-4 justify-start md:justify-center px-8 min-w-max">
+                    <footer className="w-full bg-black/50 backdrop-blur-md border-t border-white/5 py-6 overflow-x-auto no-scrollbar">
+                        <div className="flex flex-row-reverse gap-4 justify-start md:justify-center px-10 min-w-max">
                             {zmanim.map(z => (
                                 <div 
                                     key={z.id} 
                                     onClick={() => setNotifs(p => p.includes(z.id) ? p.filter(x => x !== z.id) : [...p, z.id])}
-                                    className={`zman-card relative cursor-pointer rounded-2xl px-6 py-4 flex flex-col items-center min-w-[140px] ${nextZman?.id === z.id ? 'active-zman' : ''}`}
+                                    className={`zman-card relative cursor-pointer rounded-2xl px-8 py-5 flex flex-col items-center min-w-[160px] ${nextZman?.id === z.id ? 'active-zman' : ''}`}
                                 >
-                                    <span className="text-[11px] text-white/40 font-bold mb-2">{z.label}</span>
-                                    <span className="text-2xl digital-font font-bold text-white">{z.time.slice(0, 5)}</span>
-                                    <span className="text-[10px] digital-font text-white/20 mt-1">{z.time.slice(-2)}</span>
+                                    <span className="text-xs text-white/40 font-bold mb-3">{z.label}</span>
+                                    <span className="text-3xl digital-font font-bold text-white">{z.time.slice(0, 5)}</span>
+                                    <span className="text-[11px] digital-font text-white/20 mt-2">{z.time.slice(-2)}</span>
                                     
                                     {notifs.includes(z.id) && (
-                                        <div className="absolute top-2 left-2 text-[8px] text-yellow-400">
+                                        <div className="absolute top-3 left-3 text-xs text-yellow-400">
                                             <i className="fas fa-bell"></i>
                                         </div>
                                     )}
                                 </div>
                             ))}
                         </div>
-                        <div className="w-full text-center text-[8px] text-white/10 uppercase tracking-[0.4em] mt-4">
-                            ASHOD • METHODE GRA • GPS 31.8N 34.6E
+                        <div className="w-full text-center text-[10px] text-white/10 uppercase tracking-[0.5em] mt-6">
+                            LOCAL COORDINATES: {COORDINATES.lat}, {COORDINATES.lng} • METHOD GRA
                         </div>
                     </footer>
                 </div>
