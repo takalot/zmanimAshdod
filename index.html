@@ -76,23 +76,39 @@
             backdrop-filter: blur(8px);
         }
         .holiday-badge {
-            background: linear-gradient(90deg, rgba(251, 206, 7, 0.2), transparent);
-            border-right: 4px solid #fbce07;
+            background: linear-gradient(90deg, rgba(251, 206, 7, 0.3), rgba(251, 206, 7, 0.05));
+            border-right: 3px solid #fbce07;
+            padding: 8px 16px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(251, 206, 7, 0.2);
         }
         .fast-day-badge {
-            background: linear-gradient(90deg, rgba(239, 68, 68, 0.2), transparent);
-            border-right: 4px solid #ef4444;
+            background: linear-gradient(90deg, rgba(239, 68, 68, 0.3), rgba(239, 68, 68, 0.05));
+            border-right: 3px solid #ef4444;
             color: #ef4444 !important;
+            padding: 8px 16px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.2);
         }
         .parasha-glow {
-            text-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+            text-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+        }
+        .header-section {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            flex-wrap: nowrap;
+        }
+        .separator {
+            width: 1px;
+            height: 3.5rem;
+            background: rgba(255, 255, 255, 0.1);
         }
     </style>
 <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@^18.2.0",
-    "react-dom": "https://esm.sh/react-dom@^18.2.0",
+    "react": "https://esm.sh/react@^19.2.3",
     "d3": "https://esm.sh/d3@^7.9.0",
     "react/": "https://esm.sh/react@^19.2.3/"
   }
@@ -255,24 +271,30 @@
             return (
                 <div className="h-screen flex flex-col justify-between py-2 px-6 overflow-hidden bg-black text-white">
                     
-                    {/* HEADER */}
-                    <header className="flex flex-row-reverse justify-between items-start border-b border-white/10 pb-4 pt-4">
-                        <div className="flex flex-row-reverse items-center gap-6 md:gap-10">
-                            <span className="text-yellow-400 digital-font font-bold text-5xl md:text-7xl tracking-tighter">{curTime.slice(0, 5)}</span>
-                            <span className="opacity-20 text-4xl hidden md:block">|</span>
-                            <div className="flex flex-col items-end gap-1">
-                                <div className="flex flex-row-reverse items-center gap-3 md:gap-6">
-                                    <span className="text-blue-400 text-3xl md:text-5xl font-black">{HEBREW_DAYS[now.getDay()]}</span>
-                                    <div className="flex flex-col items-end">
-                                        <span className="text-blue-400/60 text-[10px] md:text-xs font-black uppercase tracking-[0.2em] mb-0.5">פרשת השבוע</span>
-                                        <span className="text-white text-2xl md:text-5xl font-black whitespace-nowrap leading-none parasha-glow">{data.parashaHeb}</span>
-                                        <span className="text-blue-300/40 text-[8px] md:text-xs font-bold uppercase tracking-widest">{data.parashaEng}</span>
-                                    </div>
+                    {/* UPDATED HEADER: EVERYTHING IN LINE */}
+                    <header className="w-full flex flex-row-reverse items-center justify-between border-b border-white/10 py-6">
+                        
+                        {/* RIGHT BLOCK: Time | Day | Parasha | Holidays */}
+                        <div className="header-section">
+                            <span className="text-yellow-400 digital-font font-black text-7xl leading-none">{curTime.slice(0, 5)}</span>
+                            
+                            <div className="separator"></div>
+                            
+                            <div className="flex items-center gap-8">
+                                <div className="flex flex-col items-end">
+                                    <span className="text-blue-400 text-3xl md:text-5xl font-black leading-none">{HEBREW_DAYS[now.getDay()]}</span>
+                                    <span className="text-white/20 text-[10px] uppercase font-bold tracking-widest mt-1">יום בשבוע</span>
                                 </div>
+
+                                <div className="flex flex-col items-end border-r border-white/10 pr-6">
+                                    <span className="text-sky-400/60 text-[10px] font-black uppercase tracking-[0.2em] mb-0.5">פרשת השבוע</span>
+                                    <span className="text-sky-300 text-4xl md:text-5xl font-black parasha-glow leading-none">{data.parashaHeb}</span>
+                                </div>
+
                                 {data.holidays && data.holidays.length > 0 && (
-                                    <div className="flex flex-col gap-1 items-end mt-1">
+                                    <div className="flex gap-4 items-center">
                                         {data.holidays.map((h, i) => (
-                                            <div key={i} className={`px-4 py-1 font-bold text-lg md:text-2xl animate-pulse whitespace-nowrap ${h.isFast ? 'fast-day-badge' : 'holiday-badge text-yellow-400'}`}>
+                                            <div key={i} className={`font-black text-2xl md:text-3xl whitespace-nowrap animate-pulse ${h.isFast ? 'fast-day-badge' : 'holiday-badge text-yellow-400'}`}>
                                                 {h.text}
                                             </div>
                                         ))}
@@ -281,17 +303,22 @@
                             </div>
                         </div>
 
-                        <div className="flex flex-row-reverse items-center gap-4 md:gap-10 text-xl md:text-3xl font-black">
-                            <div className="flex flex-col items-end">
-                                <span className="text-sky-200 whitespace-nowrap">{data.hebrewDate}</span>
-                                <span className="text-white/30 text-xs md:text-lg digital-font mt-1">{data.gregorianDate}</span>
+                        {/* LEFT BLOCK: Dates | Daf | Settings */}
+                        <div className="header-section flex-row-reverse">
+                            <div className="flex flex-col items-start">
+                                <span className="text-sky-100 text-3xl font-black whitespace-nowrap">{data.hebrewDate}</span>
+                                <span className="text-white/40 text-xl digital-font font-bold mt-1 tracking-wider">{data.gregorianDate}</span>
                             </div>
-                            <span className="opacity-20 hidden md:block">|</span>
-                            <div className="flex flex-row-reverse items-center gap-2">
-                                <span className="text-green-400 whitespace-nowrap font-black">{data.daf}</span>
+                            
+                            <div className="separator"></div>
+                            
+                            <div className="flex flex-col items-center">
+                                <span className="text-white/20 text-[10px] font-black uppercase mb-0.5">דף היומי</span>
+                                <span className="text-green-400 text-3xl font-black whitespace-nowrap">{data.daf}</span>
                             </div>
-                            <button onClick={() => setShowSettings(true)} className="text-white/20 hover:text-white transition-all hover:rotate-90 p-2">
-                                <i className="fa-solid fa-gear text-2xl"></i>
+                            
+                            <button onClick={() => setShowSettings(true)} className="text-white/20 hover:text-white transition-all hover:rotate-90 p-2 mr-4">
+                                <i className="fa-solid fa-gear text-4xl"></i>
                             </button>
                         </div>
                     </header>
@@ -300,27 +327,27 @@
                     <main className="flex-grow flex flex-col items-center justify-center relative py-1">
                         {countdownData ? (
                             <div className="flex flex-col items-center">
-                                <div className={`${countdownData.colorClass.split(' ')[0]} text-2xl md:text-5xl font-black uppercase tracking-[0.4em] mb-4 animate-pulse`}>
+                                <div className={`${countdownData.colorClass.split(' ')[0]} text-3xl md:text-5xl font-black uppercase tracking-[0.4em] mb-6 animate-pulse`}>
                                     {nextZman?.label} בעוד
                                 </div>
                                 <div className={`text-[12rem] md:text-[22rem] leading-none digital-font font-black ${countdownData.colorClass}`}>
                                     {countdownData.timeString}
                                 </div>
-                                <div className="mt-8 text-2xl md:text-5xl text-white/20 digital-font font-bold uppercase tracking-[0.5em]">
-                                    HEURE: {curTime}
+                                <div className="mt-8 text-2xl md:text-5xl text-white/10 digital-font font-bold uppercase tracking-[0.5em]">
+                                    HORAIRE: {curTime}
                                 </div>
                             </div>
                         ) : (
                             <div className="text-center">
                                 {nextZman && (
-                                    <div className="mb-6 md:mb-12">
-                                        <div className="text-white/20 uppercase tracking-[0.5em] text-[10px] md:text-xs font-bold mb-2">Prochain horaire</div>
-                                        <div className="text-5xl md:text-8xl font-black text-white glow-text">{nextZman.label}</div>
-                                        <div className="text-2xl md:text-4xl text-yellow-400 mt-2 md:mt-4 digital-font font-bold">{nextZman.time.slice(0, 5)}</div>
+                                    <div className="mb-8 md:mb-16">
+                                        <div className="text-white/20 uppercase tracking-[0.5em] text-[10px] md:text-xs font-bold mb-3">Prochain horaire</div>
+                                        <div className="text-6xl md:text-9xl font-black text-white glow-text">{nextZman.label}</div>
+                                        <div className="text-3xl md:text-5xl text-yellow-400 mt-2 md:mt-4 digital-font font-black">{nextZman.time.slice(0, 5)}</div>
                                     </div>
                                 )}
                                 <div className="text-yellow-400/20 text-[10px] md:text-sm font-bold tracking-[1em] mb-4 uppercase">Horloge Actuelle</div>
-                                <h1 className="text-[9rem] md:text-[18rem] leading-none font-black digital-font text-white glow-text tracking-tighter">
+                                <h1 className="text-[10rem] md:text-[20rem] leading-none font-black digital-font text-white glow-text tracking-tighter">
                                     {curTime}
                                 </h1>
                             </div>
@@ -328,8 +355,8 @@
                     </main>
 
                     {/* FOOTER */}
-                    <footer className="w-full bg-white/5 backdrop-blur-md rounded-2xl py-3 md:py-4 border border-white/10 mb-4 shadow-2xl">
-                        <div className="flex flex-row-reverse flex-wrap gap-2 md:gap-3 justify-center px-4">
+                    <footer className="w-full bg-white/5 backdrop-blur-md rounded-2xl py-4 md:py-6 border border-white/10 mb-6 shadow-2xl">
+                        <div className="flex flex-row-reverse flex-wrap gap-2 md:gap-4 justify-center px-4">
                             {visibleZmanim.map(z => {
                                 const isActive = nextZman?.id === z.id;
                                 const hasReminder = reminders.includes(z.id);
@@ -339,11 +366,11 @@
                                         onClick={() => {
                                             setReminders(prev => prev.includes(z.id) ? prev.filter(i => i !== z.id) : [...prev, z.id]);
                                         }}
-                                        className={`zman-card rounded-xl px-3 py-2 md:px-5 md:py-3 flex flex-col items-center min-w-[95px] md:min-w-[140px] flex-grow md:flex-grow-0 transition-all ${isActive ? 'active-zman' : ''}`}
+                                        className={`zman-card rounded-2xl px-4 py-3 md:px-6 md:py-4 flex flex-col items-center min-w-[100px] md:min-w-[150px] flex-grow md:flex-grow-0 transition-all ${isActive ? 'active-zman' : ''}`}
                                     >
                                         {hasReminder && <i className="fa-solid fa-bell reminder-icon"></i>}
-                                        <span className="text-[9px] md:text-xs text-white/40 font-black mb-1 md:mb-2 whitespace-nowrap uppercase tracking-tighter">{z.label}</span>
-                                        <span className={`text-xl md:text-3xl digital-font font-bold tracking-tight ${isActive ? 'text-yellow-400' : 'text-white'}`}>
+                                        <span className="text-[10px] md:text-xs text-white/40 font-black mb-2 whitespace-nowrap uppercase tracking-tighter">{z.label}</span>
+                                        <span className={`text-2xl md:text-4xl digital-font font-bold tracking-tight ${isActive ? 'text-yellow-400' : 'text-white'}`}>
                                             {z.time.slice(0, 5)}
                                         </span>
                                         <span className="text-[8px] md:text-[10px] digital-font text-white/20 mt-1 uppercase">{z.time.slice(-2)}</span>
@@ -353,7 +380,7 @@
                         </div>
                     </footer>
 
-                    <div className="text-center text-[7px] md:text-[9px] text-white/10 uppercase tracking-[0.6em] mb-2 font-bold">
+                    <div className="text-center text-[7px] md:text-[9px] text-white/10 uppercase tracking-[0.6em] mb-4 font-bold">
                         Ashdod Pro Dashboard • Method Gra • GPS: {COORDS.lat}, {COORDS.lng}
                     </div>
 
