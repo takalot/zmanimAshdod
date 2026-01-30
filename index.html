@@ -1,12 +1,10 @@
-
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zmanim Pro - Ashdod Dashboard</title>
+    <title>Zmanim Pro - Dashboard</title>
     
-    <!-- Librairies via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -23,97 +21,88 @@
             margin: 0;
             height: 100vh;
         }
-        .digital-font {
-            font-family: 'JetBrains Mono', monospace;
-        }
+        .digital-font { font-family: 'JetBrains Mono', monospace; }
         .zman-card {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.2s ease-out;
+            transition: all 0.3s ease;
             cursor: pointer;
             position: relative;
         }
         .zman-card:hover {
-            background: rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.1);
             border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
         }
         .active-zman {
-            border: 3px solid #fbce07 !important;
-            background: rgba(251, 206, 7, 0.2) !important;
-            box-shadow: 0 0 25px rgba(251, 206, 7, 0.4);
-            transform: scale(1.05);
+            border: 2px solid #fbce07 !important;
+            background: rgba(251, 206, 7, 0.15) !important;
+            box-shadow: 0 0 30px rgba(251, 206, 7, 0.3);
+            transform: scale(1.03);
             z-index: 10;
         }
         .reminder-icon {
             position: absolute;
-            top: 5px;
-            right: 5px;
+            top: 8px;
+            right: 8px;
             color: #fbce07;
-            font-size: 10px;
+            font-size: 12px;
             animation: bounce 2s infinite;
         }
         @keyframes bounce {
             0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-3px); }
+            50% { transform: translateY(-4px); }
         }
-        .glow-text {
-            text-shadow: 0 0 30px rgba(251, 206, 7, 0.4);
+        .glow-text { text-shadow: 0 0 30px rgba(251, 206, 7, 0.5); }
+        .glow-red { text-shadow: 0 0 60px rgba(239, 68, 68, 1); }
+        .glow-orange { text-shadow: 0 0 60px rgba(249, 115, 22, 1); }
+        .glow-green { text-shadow: 0 0 60px rgba(34, 197, 94, 1); }
+        .glow-blue { text-shadow: 0 0 60px rgba(59, 130, 246, 1); }
+
+        @keyframes progress-bar {
+            0% { width: 0%; }
+            100% { width: 100%; }
         }
-        .glow-red {
-            text-shadow: 0 0 60px rgba(239, 68, 68, 1);
-        }
-        .glow-orange {
-            text-shadow: 0 0 60px rgba(249, 115, 22, 1);
-        }
-        .glow-green {
-            text-shadow: 0 0 60px rgba(34, 197, 94, 1);
-        }
+        .progress-animation { animation: progress-bar 30s linear; }
+
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        .modal-overlay {
-            background: rgba(0, 0, 0, 0.9);
-            backdrop-filter: blur(8px);
-        }
+
+        .modal-overlay { background: rgba(0, 0, 0, 0.9); backdrop-filter: blur(8px); }
+
         .holiday-badge {
             background: linear-gradient(90deg, rgba(251, 206, 7, 0.3), rgba(251, 206, 7, 0.05));
             border-right: 3px solid #fbce07;
-            padding: 8px 16px;
-            border-radius: 8px;
-            box-shadow: 0 0 15px rgba(251, 206, 7, 0.2);
+            padding: 10px 20px;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(251, 206, 7, 0.3);
         }
         .fast-day-badge {
             background: linear-gradient(90deg, rgba(239, 68, 68, 0.3), rgba(239, 68, 68, 0.05));
             border-right: 3px solid #ef4444;
             color: #ef4444 !important;
-            padding: 8px 16px;
-            border-radius: 8px;
-            box-shadow: 0 0 15px rgba(239, 68, 68, 0.2);
+            padding: 10px 20px;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
         }
-        .parasha-glow {
-            text-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
-        }
-        .header-section {
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-            flex-wrap: nowrap;
-        }
+        .parasha-glow { text-shadow: 0 0 25px rgba(56, 189, 248, 0.6); }
+
+        .header-section { display: flex; align-items: center; gap: 2rem; flex-wrap: nowrap; }
         .separator {
-            width: 1px;
-            height: 3.5rem;
-            background: rgba(255, 255, 255, 0.1);
+            width: 2px;
+            height: 4rem;
+            background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.2), transparent);
+        }
+        .header-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 1rem 1.5rem;
+        }
+        .footer-gradient {
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.8), rgba(255, 255, 255, 0.05));
         }
     </style>
-<script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
-    "d3": "https://esm.sh/d3@^7.9.0",
-    "react/": "https://esm.sh/react@^19.2.3/"
-  }
-}
-</script>
 </head>
 <body>
     <div id="root"></div>
@@ -121,7 +110,22 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useCallback } = React;
 
-        const COORDS = { lat: 31.7946, lng: 35.2158 };
+        const CITIES = {
+            ashdod: { name: 'אשדוד', lat: 31.8044, lng: 34.6553 },
+            jerusalem: { name: 'ירושלים', lat: 31.7683, lng: 35.2137 },
+            telaviv: { name: 'תל אביב', lat: 32.0853, lng: 34.7818 },
+            haifa: { name: 'חיפה', lat: 32.7940, lng: 34.9896 },
+            beersheva: { name: 'באר שבע', lat: 31.2518, lng: 34.7913 },
+            netanya: { name: 'נתניה', lat: 32.3215, lng: 34.8532 },
+            bneibraq: { name: 'בני ברק', lat: 32.0809, lng: 34.8338 },
+            petahtikva: { name: 'פתח תקווה', lat: 32.0879, lng: 34.8878 },
+            paris: { name: 'פריז', lat: 48.8570, lng: 2.3524 },
+            dublin: { name: 'דבלין', lat: 53.3493, lng: -6.2605 },
+            new_york: { name: 'ניו-יורק', lat: 40.5799, lng: -74.5321 },
+            sidney: { name: 'סידני', lat: -33.92564, lng: 150.5663 },
+            tokyo: { name: 'טוקיו', lat: 35.6768, lng: 139.7638 }
+        };
+
         const HEBREW_DAYS = ["יום ראשון", "יום שני", "יום שלישי", "יום רביעי", "יום חמישי", "יום שישי", "שבת"];
 
         function parseTime(timeStr, baseDate) {
@@ -139,24 +143,72 @@
             return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
         }
 
+        // ✅ météo 7h/12h "safe" (on cherche par time[] au lieu d'index fixe)
+        function getWeatherAtHours(weatherRes, hoursWanted = [7, 12]) {
+            const hourly = weatherRes?.hourly;
+            if (!hourly?.time || !hourly?.temperature_2m || !hourly?.weather_code) return null;
+
+            const out = {};
+            for (let i = 0; i < hourly.time.length; i++) {
+                const t = hourly.time[i];
+                const h = new Date(t).getHours();
+                if (hoursWanted.includes(h)) {
+                    out[h] = {
+                        temp: Math.round(hourly.temperature_2m[i]),
+                        code: hourly.weather_code[i]
+                    };
+                }
+            }
+            return {
+                weather7h: out[7] || null,
+                weather12h: out[12] || null
+            };
+        }
+
         function App() {
             const [now, setNow] = useState(new Date());
             const [data, setData] = useState(null);
             const [zmanim, setZmanim] = useState([]);
             const [loading, setLoading] = useState(true);
             const [showSettings, setShowSettings] = useState(false);
-            
+            const [weather, setWeather] = useState(null);
+
+            const [selectedCity, setSelectedCity] = useState(() => {
+                const saved = localStorage.getItem('selectedCity_v1');
+                return (saved && CITIES[saved]) ? saved : 'ashdod';
+            });
+
             const [visibleIds, setVisibleIds] = useState(() => {
                 const saved = localStorage.getItem('visibleZmanim_v4');
                 return saved ? JSON.parse(saved) : ['alot', 'sunrise', 'shema', 'tefillah', 'chatzot', 'mincha_g', 'plag', 'shkia', 'tzeit', 'chatzot_l'];
             });
+
             const [reminders, setReminders] = useState(() => {
                 const saved = localStorage.getItem('zmanReminders_v4');
                 return saved ? JSON.parse(saved) : [];
             });
 
+            useEffect(() => {
+                localStorage.setItem('visibleZmanim_v4', JSON.stringify(visibleIds));
+            }, [visibleIds]);
+
+            useEffect(() => {
+                localStorage.setItem('zmanReminders_v4', JSON.stringify(reminders));
+            }, [reminders]);
+
+            useEffect(() => {
+                localStorage.setItem('selectedCity_v1', selectedCity);
+            }, [selectedCity]);
+
             const fetchData = useCallback(async () => {
                 try {
+                    const coords = CITIES[selectedCity];
+
+                    if (!coords) {
+                        console.error("Ville invalide:", selectedCity);
+                        return;
+                    }
+
                     const today = new Date();
                     const iso = today.toISOString().split('T')[0];
                     const y = today.getFullYear(), m = today.getMonth() + 1, d = today.getDate();
@@ -166,24 +218,29 @@
                     sat.setDate(today.getDate() + daysUntilSat);
                     const satIso = sat.toISOString().split('T')[0];
 
-                    const [solarRes, hebDateRes, dailyRes] = await Promise.all([
-                        fetch(`https://api.sunrisesunset.io/json?lat=${COORDS.lat}&lng=${COORDS.lng}&date=${iso}`).then(r => r.json()),
+                    const [solarRes, hebDateRes, dailyRes, weatherRes] = await Promise.all([
+                        fetch(`https://api.sunrisesunset.io/json?lat=${coords.lat}&lng=${coords.lng}&date=${iso}`).then(r => r.json()),
                         fetch(`https://www.hebcal.com/converter?cfg=json&gy=${y}&gm=${m}&gd=${d}&g2h=1`).then(r => r.json()),
-                        fetch(`https://www.hebcal.com/hebcal?v=1&cfg=json&maj=on&min=on&mod=on&nx=on&start=${iso}&end=${satIso}&ss=on&mf=on&c=off&geo=none&F=on&heb=on&s=on`).then(r => r.json())
+                        fetch(`https://www.hebcal.com/hebcal?v=1&cfg=json&maj=on&min=on&mod=on&nx=on&start=${iso}&end=${satIso}&ss=on&mf=on&c=off&geo=none&F=on&heb=on&s=on`).then(r => r.json()),
+                        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lng}&hourly=temperature_2m,weather_code&timezone=auto&forecast_days=1`).then(r => r.json())
                     ]);
+
+                    // ✅ Extraction météo 7h et 12h
+                    const extracted = getWeatherAtHours(weatherRes, [7, 12]);
+                    setWeather(extracted);
 
                     const solar = solarRes.results;
                     const items = dailyRes.items || [];
-                    
+
                     const daf = items.find(i => i.category === 'dafyomi' && i.date === iso)?.hebrew || "---";
                     const parashaEvent = items.find(i => i.category === 'parashat' && i.date === satIso);
                     const parashaHeb = parashaEvent ? parashaEvent.hebrew.replace('פרשת ', '') : "---";
                     const parashaEng = parashaEvent ? parashaEvent.title.replace('Parashat ', '') : "---";
-                    
-                    const specialEvents = items.filter(i => 
+
+                    const specialEvents = items.filter(i =>
                         (i.category === 'holiday' || i.category === 'roshchodesh') && i.date === iso
                     );
-                    
+
                     const holidayInfo = specialEvents.map(e => ({
                         text: e.hebrew,
                         isFast: e.subcat === 'fast' || e.title.toLowerCase().includes('fast') || e.hebrew.includes('צום') || e.hebrew.includes('תענית')
@@ -195,7 +252,7 @@
                     const dusk = parseTime(solar.dusk, today);
                     const noon = parseTime(solar.solar_noon, today);
                     const shaah = (sunset.getTime() - sunrise.getTime()) / 12;
-                    
+
                     const chatzotLaila = new Date(noon.getTime() + 12 * 60 * 60 * 1000);
 
                     const list = [
@@ -211,57 +268,91 @@
                         { id: 'chatzot_l', label: 'חצות לילה', fullTime: chatzotLaila, time: formatTime(chatzotLaila) }
                     ];
 
-                    setData({ 
-                        hebrewDate: hebDateRes.hebrew, 
-                        daf, 
-                        parashaHeb, 
-                        parashaEng, 
-                        holidays: holidayInfo, 
-                        gregorianDate: `${d.toString().padStart(2, '0')}.${m.toString().padStart(2, '0')}.${y}` 
+                    setData({
+                        hebrewDate: hebDateRes.hebrew,
+                        daf,
+                        parashaHeb,
+                        parashaEng,
+                        holidays: holidayInfo,
+                        gregorianDate: `${d.toString().padStart(2, '0')}.${m.toString().padStart(2, '0')}.${y}`
                     });
                     setZmanim(list);
                     setLoading(false);
                 } catch (e) {
                     console.error("API Error:", e);
                 }
+            }, [selectedCity]);
+
+            useEffect(() => { fetchData(); }, [fetchData]);
+
+            useEffect(() => {
+                const timer = setInterval(() => setNow(new Date()), 1000);
+                return () => clearInterval(timer);
             }, []);
 
             useEffect(() => {
-                fetchData();
-                const timer = setInterval(() => setNow(new Date()), 1000);
-                return () => clearInterval(timer);
+                let lastCheckedDate = new Date().toDateString();
+
+                const dayCheckTimer = setInterval(() => {
+                    const currentDate = new Date().toDateString();
+                    if (currentDate !== lastCheckedDate) {
+                        lastCheckedDate = currentDate;
+                        fetchData();
+                    }
+                }, 60000);
+
+                return () => clearInterval(dayCheckTimer);
             }, [fetchData]);
 
             const nextZman = useMemo(() => {
+                if (!zmanim.length) return null;
                 const sorted = [...zmanim].sort((a,b) => a.fullTime - b.fullTime);
-                return sorted.find(z => z.fullTime > now) || null;
+                let next = sorted.find(z => z.fullTime > now);
+                if (!next) next = sorted[0];
+                return next;
+            }, [zmanim, now]);
+
+            const activeZman = useMemo(() => {
+                const sorted = [...zmanim].sort((a,b) => a.fullTime - b.fullTime);
+                return sorted.find(z => {
+                    const diff = now.getTime() - z.fullTime.getTime();
+                    return diff > 0 && diff <= 30000;
+                }) || null;
             }, [zmanim, now]);
 
             const countdownData = useMemo(() => {
+                if (activeZman) {
+                    return {
+                        isProgressBar: true,
+                        colorClass: "text-blue-500 glow-blue",
+                        label: activeZman.label,
+                        time: activeZman.time
+                    };
+                }
+
                 if (!nextZman) return null;
                 const diff = nextZman.fullTime.getTime() - now.getTime();
-                
-                // Déclenchement à 30 minutes (1,800,000 ms)
-                if (diff > 0 && diff <= 1800000) { 
+
+                if (diff > 0 && diff <= 1800000) {
                     const m = Math.floor(diff / 60000);
                     const s = Math.floor((diff % 60000) / 1000);
                     const timeString = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-                    
-                    let colorClass = "text-green-500 glow-green"; 
+
+                    let colorClass = "text-green-500 glow-green";
                     if (diff <= 60000) {
-                        colorClass = "text-red-600 glow-red"; // 1 min (Rouge)
+                        colorClass = "text-red-600 glow-red";
                     } else if (diff <= 300000) {
-                        colorClass = "text-orange-500 glow-orange"; // 5 min (Orange)
+                        colorClass = "text-orange-500 glow-orange";
                     }
-                    
-                    return { timeString, colorClass };
+
+                    return { timeString, colorClass, isProgressBar: false };
                 }
                 return null;
-            }, [nextZman, now]);
+            }, [nextZman, activeZman, now]);
 
             if (loading) return (
                 <div className="h-screen flex items-center justify-center bg-black">
-                    <div className="text-yellow-400 font-bold text-2xl animate-pulse digital-font tracking-[0.5em]">ASHDOD...</div>
+                    <div className="text-yellow-400 font-bold text-2xl animate-pulse digital-font tracking-[0.5em]">LOADING...</div>
                 </div>
             );
 
@@ -269,30 +360,43 @@
             const visibleZmanim = zmanim.filter(z => visibleIds.includes(z.id)).sort((a,b) => a.fullTime - b.fullTime);
 
             return (
-                <div className="h-screen flex flex-col justify-between py-2 px-6 overflow-hidden bg-black text-white">
-                    
-                    {/* UPDATED HEADER: EVERYTHING IN LINE */}
-                    <header className="w-full flex flex-row-reverse items-center justify-between border-b border-white/10 py-6">
-                        
-                        {/* RIGHT BLOCK: Time | Day | Parasha | Holidays */}
-                        <div className="header-section">
-                            <span className="text-yellow-400 digital-font font-black text-7xl leading-none">{curTime.slice(0, 5)}</span>
-                            
-                            <div className="separator"></div>
-                            
-                            <div className="flex items-center gap-8">
-                                <div className="flex flex-col items-end">
-                                    <span className="text-blue-400 text-3xl md:text-5xl font-black leading-none">{HEBREW_DAYS[now.getDay()]}</span>
-                                    <span className="text-white/20 text-[10px] uppercase font-bold tracking-widest mt-1">יום בשבוע</span>
+                <div className="h-screen flex flex-col justify-between px-6 overflow-hidden bg-black text-white">
+
+                    <header className="w-full border-b border-white/10 pb-6 pt-6">
+                        <div className="flex flex-row-reverse items-center justify-between">
+
+                            <div className="flex items-center gap-6">
+                                <div className="text-yellow-400 digital-font font-black text-7xl leading-none">
+                                    {curTime}
                                 </div>
 
-                                <div className="flex flex-col items-end border-r border-white/10 pr-6">
-                                    <span className="text-sky-400/60 text-[10px] font-black uppercase tracking-[0.2em] mb-0.5">פרשת השבוע</span>
-                                    <span className="text-sky-300 text-4xl md:text-5xl font-black parasha-glow leading-none">{data.parashaHeb}</span>
+                                <div className="separator"></div>
+
+                                <div className="header-card">
+                                    <div className="text-white/30 text-[10px] uppercase tracking-widest mb-1">עיר</div>
+                                    <div className="text-green-400 text-3xl md:text-5xl font-black leading-none">
+                                        {CITIES[selectedCity].name}
+                                    </div>
+                                </div>
+
+                                <div className="separator"></div>
+
+                                <div className="header-card">
+                                    <div className="text-white/30 text-[10px] uppercase tracking-widest mb-1">יום בשבוע</div>
+                                    <div className="text-blue-400 text-3xl md:text-5xl font-black leading-none">
+                                        {HEBREW_DAYS[now.getDay()]}
+                                    </div>
+                                </div>
+
+                                <div className="header-card">
+                                    <div className="text-sky-400/50 text-[10px] font-black uppercase tracking-[0.2em] mb-1">פרשת השבוע</div>
+                                    <div className="text-sky-300 text-4xl md:text-5xl font-black parasha-glow leading-none">
+                                        {data?.parashaHeb || "---"}
+                                    </div>
                                 </div>
 
                                 {data.holidays && data.holidays.length > 0 && (
-                                    <div className="flex gap-4 items-center">
+                                    <div className="flex gap-3 items-center">
                                         {data.holidays.map((h, i) => (
                                             <div key={i} className={`font-black text-2xl md:text-3xl whitespace-nowrap animate-pulse ${h.isFast ? 'fast-day-badge' : 'holiday-badge text-yellow-400'}`}>
                                                 {h.text}
@@ -301,41 +405,89 @@
                                     </div>
                                 )}
                             </div>
-                        </div>
 
-                        {/* LEFT BLOCK: Dates | Daf | Settings */}
-                        <div className="header-section flex-row-reverse">
-                            <div className="flex flex-col items-start">
-                                <span className="text-sky-100 text-3xl font-black whitespace-nowrap">{data.hebrewDate}</span>
-                                <span className="text-white/40 text-xl digital-font font-bold mt-1 tracking-wider">{data.gregorianDate}</span>
+                            <div className="flex items-center gap-6">
+                                <button
+                                    onClick={() => setShowSettings(true)}
+                                    className="text-white/20 hover:text-yellow-400 transition-all hover:rotate-90 p-2"
+                                >
+                                    <i className="fa-solid fa-gear text-4xl"></i>
+                                </button>
+
+                                <div className="header-card">
+                                    <div className="text-white/30 text-[10px] uppercase tracking-widest mb-1">דף היומי</div>
+                                    <div className="text-green-400 text-3xl font-black whitespace-nowrap">
+                                        {data.daf}
+                                    </div>
+                                </div>
+
+                                {weather?.weather7h && weather?.weather12h && (
+                                    <>
+                                        <div className="separator"></div>
+
+                                        <div className="header-card">
+                                            <div className="text-white/30 text-[10px] uppercase tracking-widest mb-1">מזג אוויר</div>
+                                            <div className="flex gap-4 items-center">
+                                                <div className="text-center">
+                                                    <div className="text-cyan-400 text-2xl font-black">
+                                                        {weather.weather7h.temp}°
+                                                    </div>
+                                                    <div className="text-white/20 text-[8px] uppercase">7:00</div>
+                                                </div>
+                                                <div className="text-white/20 text-2xl">/</div>
+                                                <div className="text-center">
+                                                    <div className="text-orange-400 text-2xl font-black">
+                                                        {weather.weather12h.temp}°
+                                                    </div>
+                                                    <div className="text-white/20 text-[8px] uppercase">12:00</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+
+                                <div className="separator"></div>
+
+                                <div className="header-card text-left">
+                                    <div className="text-sky-100 text-3xl font-black whitespace-nowrap mb-1">
+                                        {data.hebrewDate}
+                                    </div>
+                                    <div className="text-white/40 text-xl digital-font font-bold tracking-wider">
+                                        {data.gregorianDate}
+                                    </div>
+                                </div>
                             </div>
-                            
-                            <div className="separator"></div>
-                            
-                            <div className="flex flex-col items-center">
-                                <span className="text-white/20 text-[10px] font-black uppercase mb-0.5">דף היומי</span>
-                                <span className="text-green-400 text-3xl font-black whitespace-nowrap">{data.daf}</span>
-                            </div>
-                            
-                            <button onClick={() => setShowSettings(true)} className="text-white/20 hover:text-white transition-all hover:rotate-90 p-2 mr-4">
-                                <i className="fa-solid fa-gear text-4xl"></i>
-                            </button>
                         </div>
                     </header>
 
-                    {/* MAIN DISPLAY */}
-                    <main className="flex-grow flex flex-col items-center justify-center relative py-1">
+                    <main className="flex-grow flex flex-col items-center justify-center relative">
                         {countdownData ? (
-                            <div className="flex flex-col items-center">
-                                <div className={`${countdownData.colorClass.split(' ')[0]} text-3xl md:text-5xl font-black uppercase tracking-[0.4em] mb-6 animate-pulse`}>
-                                    {nextZman?.label} בעוד
-                                </div>
-                                <div className={`text-[12rem] md:text-[22rem] leading-none digital-font font-black ${countdownData.colorClass}`}>
-                                    {countdownData.timeString}
-                                </div>
-                                <div className="mt-8 text-2xl md:text-5xl text-white/10 digital-font font-bold uppercase tracking-[0.5em]">
-                                    HORAIRE: {curTime}
-                                </div>
+                            <div className="flex flex-col items-center w-full max-w-6xl">
+                                {countdownData.isProgressBar ? (
+                                    <>
+                                        <div className="text-blue-500 text-3xl md:text-5xl font-black uppercase tracking-[0.4em] mb-6 animate-pulse">
+                                            {countdownData.label} - זמן הגיע
+                                        </div>
+                                        <div className="text-[8rem] md:text-[16rem] leading-none digital-font font-black text-blue-400 mb-8">
+                                            {countdownData.time.slice(0, 5)}
+                                        </div>
+                                        <div className="w-full bg-white/10 rounded-full h-8 md:h-12 overflow-hidden border-2 border-blue-500 shadow-lg shadow-blue-500/50">
+                                            <div className="progress-animation h-full bg-gradient-to-r from-blue-600 via-blue-400 to-blue-300 shadow-lg"></div>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className={`${countdownData.colorClass.split(' ')[0]} text-3xl md:text-5xl font-black uppercase tracking-[0.4em] mb-6 animate-pulse`}>
+                                            {nextZman?.label} בעוד
+                                        </div>
+                                        <div className={`text-[12rem] md:text-[22rem] leading-none digital-font font-black ${countdownData.colorClass}`}>
+                                            {countdownData.timeString}
+                                        </div>
+                                        <div className="mt-8 text-2xl md:text-5xl text-white/10 digital-font font-bold uppercase tracking-[0.5em]">
+                                            HORAIRE: {curTime}
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         ) : (
                             <div className="text-center">
@@ -348,64 +500,101 @@
                                 )}
                                 <div className="text-yellow-400/20 text-[10px] md:text-sm font-bold tracking-[1em] mb-4 uppercase">Horloge Actuelle</div>
                                 <h1 className="text-[10rem] md:text-[20rem] leading-none font-black digital-font text-white glow-text tracking-tighter">
-                                    {curTime}
+                                    {curTime.slice(0, 5)}
                                 </h1>
                             </div>
                         )}
                     </main>
 
-                    {/* FOOTER */}
-                    <footer className="w-full bg-white/5 backdrop-blur-md rounded-2xl py-4 md:py-6 border border-white/10 mb-6 shadow-2xl">
+                    {/* ✅ FOOTER UNIQUE (fix de l'erreur JSX) */}
+                    <footer className="w-full footer-gradient backdrop-blur-lg rounded-3xl py-6 border border-white/10 shadow-2xl">
                         <div className="flex flex-row-reverse flex-wrap gap-2 md:gap-4 justify-center px-4">
                             {visibleZmanim.map(z => {
                                 const isActive = nextZman?.id === z.id;
                                 const hasReminder = reminders.includes(z.id);
                                 return (
-                                    <div 
-                                        key={z.id} 
+                                    <div
+                                        key={z.id}
                                         onClick={() => {
                                             setReminders(prev => prev.includes(z.id) ? prev.filter(i => i !== z.id) : [...prev, z.id]);
                                         }}
-                                        className={`zman-card rounded-2xl px-4 py-3 md:px-6 md:py-4 flex flex-col items-center min-w-[100px] md:min-w-[150px] flex-grow md:flex-grow-0 transition-all ${isActive ? 'active-zman' : ''}`}
+                                        className={`zman-card rounded-2xl px-4 py-3 md:px-6 md:py-4 flex flex-col items-center min-w-[100px] md:min-w-[150px] flex-grow md:flex-grow-0 transition-all ${isActive ? 'active-zman' : ''} ${z.fullTime < now ? 'opacity-50' : ''}`}
                                     >
                                         {hasReminder && <i className="fa-solid fa-bell reminder-icon"></i>}
-                                        <span className="text-[10px] md:text-xs text-white/40 font-black mb-2 whitespace-nowrap uppercase tracking-tighter">{z.label}</span>
+                                        <span className="text-[10px] md:text-xs text-white/40 font-black mb-2 whitespace-nowrap uppercase tracking-tighter">
+                                            {z.label}
+                                        </span>
                                         <span className={`text-2xl md:text-4xl digital-font font-bold tracking-tight ${isActive ? 'text-yellow-400' : 'text-white'}`}>
                                             {z.time.slice(0, 5)}
                                         </span>
-                                        <span className="text-[8px] md:text-[10px] digital-font text-white/20 mt-1 uppercase">{z.time.slice(-2)}</span>
+                                        <span className="text-[8px] md:text-[10px] digital-font text-white/20 mt-1 uppercase">
+                                            {z.time.slice(-2)}
+                                        </span>
                                     </div>
                                 );
                             })}
                         </div>
+
+                        <div className="text-center text-[7px] md:text-[9px] text-white/10 uppercase tracking-[0.6em] mt-4 font-bold">
+                            {CITIES[selectedCity].name} Dashboard • Method Gra • GPS: {CITIES[selectedCity].lat}, {CITIES[selectedCity].lng}
+                        </div>
                     </footer>
 
-                    <div className="text-center text-[7px] md:text-[9px] text-white/10 uppercase tracking-[0.6em] mb-4 font-bold">
-                        Ashdod Pro Dashboard • Method Gra • GPS: {COORDS.lat}, {COORDS.lng}
-                    </div>
-
-                    {/* SETTINGS MODAL */}
                     {showSettings && (
                         <div className="fixed inset-0 modal-overlay z-50 flex items-center justify-center p-6" onClick={() => setShowSettings(false)}>
-                            <div className="bg-[#0a0a0a] border border-white/20 rounded-[3rem] p-10 max-w-2xl w-full shadow-[0_0_100px_rgba(0,0,0,0.5)]" onClick={e => e.stopPropagation()}>
-                                <h2 className="text-3xl font-black mb-8 text-yellow-400 text-center uppercase tracking-widest border-b border-white/10 pb-4">Configuration</h2>
-                                <div className="grid grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto no-scrollbar">
-                                    {zmanim.map(z => (
-                                        <label key={z.id} className={`flex items-center justify-between gap-4 p-5 rounded-2xl cursor-pointer transition-all ${visibleIds.includes(z.id) ? 'bg-white/10 border-white/20' : 'bg-white/5 border-transparent opacity-50'} border`}>
-                                            <span className="text-xl font-bold">{z.label}</span>
-                                            <input 
-                                                type="checkbox" 
-                                                checked={visibleIds.includes(z.id)} 
-                                                onChange={() => setVisibleIds(prev => prev.includes(z.id) ? prev.filter(i => i !== z.id) : [...prev, z.id])}
-                                                className="w-7 h-7 accent-yellow-400 rounded-lg cursor-pointer"
-                                            />
-                                        </label>
-                                    ))}
+                            <div className="bg-[#0a0a0a] border-2 border-white/20 rounded-[3rem] p-10 max-w-3xl w-full shadow-[0_0_100px_rgba(251,206,7,0.2)] max-h-[90vh] overflow-y-auto no-scrollbar" onClick={e => e.stopPropagation()}>
+                                <h2 className="text-3xl font-black mb-8 text-yellow-400 text-center uppercase tracking-widest border-b-2 border-white/10 pb-4">
+                                    <i className="fa-solid fa-sliders mr-3"></i>
+                                    Configuration
+                                </h2>
+
+                                <div className="mb-8">
+                                    <h3 className="text-xl font-black text-sky-400 mb-4 text-center">
+                                        <i className="fa-solid fa-location-dot ml-2"></i>
+                                        בחר עיר
+                                    </h3>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                        {Object.entries(CITIES).map(([key, city]) => (
+                                            <button
+                                                key={key}
+                                                onClick={() => setSelectedCity(key)}
+                                                className={`p-4 rounded-xl font-bold text-lg transition-all ${
+                                                    selectedCity === key
+                                                        ? 'bg-sky-500 text-white border-2 border-sky-300 shadow-lg shadow-sky-500/50'
+                                                        : 'bg-white/5 text-white/60 border border-white/10 hover:bg-white/10'
+                                                }`}
+                                            >
+                                                {city.name}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
-                                <button 
+
+                                <div>
+                                    <h3 className="text-xl font-black text-yellow-400 mb-4 text-center">
+                                        <i className="fa-solid fa-clock ml-2"></i>
+                                        זמנים להצגה
+                                    </h3>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {zmanim.map(z => (
+                                            <label key={z.id} className={`flex items-center justify-between gap-4 p-5 rounded-2xl cursor-pointer transition-all ${visibleIds.includes(z.id) ? 'bg-white/10 border-2 border-white/20' : 'bg-white/5 border border-transparent opacity-50'}`}>
+                                                <span className="text-lg font-bold">{z.label}</span>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={visibleIds.includes(z.id)}
+                                                    onChange={() => setVisibleIds(prev => prev.includes(z.id) ? prev.filter(i => i !== z.id) : [...prev, z.id])}
+                                                    className="w-6 h-6 accent-yellow-400 rounded-lg cursor-pointer"
+                                                />
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <button
                                     onClick={() => setShowSettings(false)}
-                                    className="mt-10 w-full bg-yellow-400 text-black py-5 rounded-2xl font-black text-2xl hover:bg-yellow-300 transition-colors uppercase shadow-lg shadow-yellow-400/20"
+                                    className="mt-8 w-full bg-yellow-400 text-black py-4 rounded-2xl font-black text-xl hover:bg-yellow-300 transition-all uppercase shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/50"
                                 >
+                                    <i className="fa-solid fa-check mr-2"></i>
                                     Valider et Fermer
                                 </button>
                             </div>
