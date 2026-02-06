@@ -388,25 +388,25 @@
                                 <div className="separator"></div>
 
                                 <div className="header-card">
-                                    <div className="text-green-400 text-3xl md:text-5xl font-black leading-none mb-2">
+                                    <div className="text-green-400 text-xl md:text-3xl font-black leading-none mb-2">
                                         {CITIES[selectedCity].name}
                                     </div>
                                     {weather?.weather7h && weather?.weather12h && (
                                         <div className="flex gap-3 items-center justify-center">
                                             <div className="text-center">
-                                                <div className="text-cyan-400 text-xl font-black">
+                                                <div className="text-cyan-400 text-3xl font-black">
                                                     {weather.weather7h.temp}°
                                                 </div>
-                                                <div className="text-cyan-300/60 text-[9px] font-bold">
+                                                <div className="text-cyan-300/60 text-[16px] font-bold">
                                                     {getWeatherDesc(weather.weather7h.code)}
                                                 </div>
                                             </div>
                                             <div className="text-white/20 text-lg">/</div>
                                             <div className="text-center">
-                                                <div className="text-orange-400 text-xl font-black">
+                                                <div className="text-orange-400 text-3xl font-black">
                                                     {weather.weather12h.temp}°
                                                 </div>
-                                                <div className="text-orange-300/60 text-[9px] font-bold">
+                                                <div className="text-orange-300/60 text-[16px] font-bold">
                                                     {getWeatherDesc(weather.weather12h.code)}
                                                 </div>
                                             </div>
@@ -417,14 +417,13 @@
                                 <div className="separator"></div>
 
                                 <div className="header-card">
-                                    <div className="text-white/30 text-[10px] uppercase tracking-widest mb-1">יום בשבוע</div>
                                     <div className="text-blue-400 text-3xl md:text-5xl font-black leading-none">
                                         {HEBREW_DAYS[now.getDay()]}
                                     </div>
                                 </div>
 
                                 <div className="header-card">
-                                    <div className="text-sky-400/50 text-[10px] font-black uppercase tracking-[0.2em] mb-1">פרשת השבוע</div>
+                                    <div className="text-sky-400/50 text-[16px] font-black uppercase tracking-[0.2em] mb-1">פרשת</div>
                                     <div className="text-sky-300 text-4xl md:text-5xl font-black parasha-glow leading-none">
                                         {data?.parashaHeb || "---"}
                                     </div>
@@ -450,7 +449,7 @@
                                 </button>
 
                                 <div className="header-card">
-                                    <div className="text-white/30 text-[10px] uppercase tracking-widest mb-1">דף היומי</div>
+                                    <div className="text-white/30 text-[16px] uppercase tracking-widest mb-1">דף היומי</div>
                                     <div className="text-green-400 text-3xl font-black whitespace-nowrap">
                                         {data?.daf || "---"}
                                     </div>
@@ -530,7 +529,7 @@
                                         className={`zman-card rounded-xl px-2 py-2 md:px-3 md:py-3 flex flex-col items-center min-w-[80px] md:min-w-[110px] flex-grow md:flex-grow-0 transition-all ${isActive ? 'active-zman' : ''} ${z.fullTime < now ? 'opacity-50' : ''}`}
                                     >
                                         {hasReminder && <i className="fa-solid fa-bell reminder-icon"></i>}
-                                        <span className="text-[8px] md:text-[9px] text-white/40 font-black mb-1 whitespace-nowrap uppercase tracking-tighter">
+                                        <span className="text-[8px] md:text-[15px] text-white/40 font-black mb-1 whitespace-nowrap uppercase tracking-tighter">
                                             {z.label}
                                         </span>
                                         <span className={`text-lg md:text-2xl digital-font font-bold tracking-tight ${isActive ? 'text-yellow-400' : 'text-white'}`}>
