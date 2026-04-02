@@ -107,510 +107,589 @@
 <body>
     <div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect, useMemo, useCallback } = React;
+<script type="text/babel">
+    const { useState, useEffect, useMemo, useCallback } = React;
 
-        const CITIES = {
-            ashdod: { name: 'אשדוד', lat: 31.8044, lng: 34.6553 },
-            jerusalem: { name: 'ירושלים', lat: 31.7683, lng: 35.2137 },
-            telaviv: { name: 'תל אביב', lat: 32.0853, lng: 34.7818 },
-            haifa: { name: 'חיפה', lat: 32.7940, lng: 34.9896 },
-            beersheva: { name: 'באר שבע', lat: 31.2518, lng: 34.7913 },
-            netanya: { name: 'נתניה', lat: 32.3215, lng: 34.8532 },
-            bneibraq: { name: 'בני ברק', lat: 32.0809, lng: 34.8338 },
-            petahtikva: { name: 'פתח תקווה', lat: 32.0879, lng: 34.8878 },
-            paris: { name: 'פריז', lat: 48.8570, lng: 2.3524 },
-            dublin: { name: 'דבלין', lat: 53.3493, lng: -6.2605 },
-            new_york: { name: 'ניו-יורק', lat: 40.5799, lng: -74.5321 },
-            sidney: { name: 'סידני', lat: -33.92564, lng: 150.5663 },
-            tokyo: { name: 'טוקיו', lat: 35.6768, lng: 139.7638 }
-        };
+    const CITIES = {
+        ashdod: { name: 'אשדוד', lat: 31.8044, lng: 34.6553 },
+        jerusalem: { name: 'ירושלים', lat: 31.7683, lng: 35.2137 },
+        telaviv: { name: 'תל אביב', lat: 32.0853, lng: 34.7818 },
+        haifa: { name: 'חיפה', lat: 32.7940, lng: 34.9896 },
+        beersheva: { name: 'באר שבע', lat: 31.2518, lng: 34.7913 },
+        netanya: { name: 'נתניה', lat: 32.3215, lng: 34.8532 },
+        bneibraq: { name: 'בני ברק', lat: 32.0809, lng: 34.8338 },
+        petahtikva: { name: 'פתח תקווה', lat: 32.0879, lng: 34.8878 },
+        paris: { name: 'פריז', lat: 48.8570, lng: 2.3524 },
+        dublin: { name: 'דבלין', lat: 53.3493, lng: -6.2605 },
+        new_york: { name: 'ניו-יורק', lat: 40.5799, lng: -74.5321 },
+        sidney: { name: 'סידני', lat: -33.92564, lng: 150.5663 },
+        tokyo: { name: 'טוקיו', lat: 35.6768, lng: 139.7638 }
+    };
 
-        const HEBREW_DAYS = ["יום ראשון", "יום שני", "יום שלישי", "יום רביעי", "יום חמישי", "יום שישי", "שבת"];
+    const HEBREW_DAYS = ["יום ראשון", "יום שני", "יום שלישי", "יום רביעי", "יום חמישי", "יום שישי", "שבת"];
 
-        function parseTime(timeStr, baseDate) {
-            if (!timeStr) return new Date();
-            const [time, period] = timeStr.split(' ');
-            let [hours, minutes, seconds] = time.split(':').map(Number);
-            if (period === 'PM' && hours !== 12) hours += 12;
-            if (period === 'AM' && hours === 12) hours = 0;
-            const d = new Date(baseDate);
-            d.setHours(hours, minutes, seconds, 0);
-            return d;
-        }
+    function parseTime(timeStr, baseDate) {
+        if (!timeStr) return new Date();
+        const [time, period] = timeStr.split(' ');
+        let [hours, minutes, seconds] = time.split(':').map(Number);
+        if (period === 'PM' && hours !== 12) hours += 12;
+        if (period === 'AM' && hours === 12) hours = 0;
+        const d = new Date(baseDate);
+        d.setHours(hours, minutes, seconds, 0);
+        return d;
+    }
 
-        function formatTime(d) {
-            return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-        }
+    function formatTime(d) {
+        return d.toLocaleTimeString('fr-FR', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        });
+    }
 
-        function getWeatherAtHours(weatherRes, hoursWanted = [7, 12]) {
-            const hourly = weatherRes?.hourly;
-            if (!hourly?.time || !hourly?.temperature_2m || !hourly?.weather_code) return null;
+    function getLocalISODate(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
 
-            const out = {};
-            for (let i = 0; i < hourly.time.length; i++) {
-                const t = hourly.time[i];
-                const h = new Date(t).getHours();
-                if (hoursWanted.includes(h)) {
-                    out[h] = {
-                        temp: Math.round(hourly.temperature_2m[i]),
-                        code: hourly.weather_code[i]
-                    };
-                }
+    function addDays(date, days) {
+        const d = new Date(date);
+        d.setDate(d.getDate() + days);
+        return d;
+    }
+
+    function getWeatherAtHours(weatherRes, hoursWanted = [7, 12]) {
+        const hourly = weatherRes?.hourly;
+        if (!hourly?.time || !hourly?.temperature_2m || !hourly?.weather_code) return null;
+
+        const out = {};
+        for (let i = 0; i < hourly.time.length; i++) {
+            const t = hourly.time[i];
+            const h = new Date(t).getHours();
+            if (hoursWanted.includes(h)) {
+                out[h] = {
+                    temp: Math.round(hourly.temperature_2m[i]),
+                    code: hourly.weather_code[i]
+                };
             }
-            return {
-                weather7h: out[7] || null,
-                weather12h: out[12] || null
-            };
         }
 
-        // Fonction pour obtenir la description météo en hébreu
-        function getWeatherDesc(code) {
-            if (!code && code !== 0) return '';
-            // 0-3: Clair/Ensoleillé
-            if (code <= 3) return 'בהיר';
-            // 45-48: Brouillard
-            if (code >= 45 && code <= 48) return 'ערפל';
-            // 51-67: Pluie
-            if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return 'גשום';
-            // 71-77, 85-86: Neige
-            if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) return 'שלג';
-            // 95-99: Orage
-            if (code >= 95 && code <= 99) return 'סוער';
-            // Nuageux par défaut
-            return 'מעונן';
-        }
+        return {
+            weather7h: out[7] || null,
+            weather12h: out[12] || null
+        };
+    }
 
-        function App() {
-            const [now, setNow] = useState(new Date());
-            const [data, setData] = useState(null);
-            const [zmanim, setZmanim] = useState([]);
-            const [loading, setLoading] = useState(true);
-            const [showSettings, setShowSettings] = useState(false);
-            const [weather, setWeather] = useState(null);
+    function getWeatherDesc(code) {
+        if (!code && code !== 0) return '';
+        if (code <= 3) return 'בהיר';
+        if (code >= 45 && code <= 48) return 'ערפל';
+        if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return 'גשום';
+        if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) return 'שלג';
+        if (code >= 95 && code <= 99) return 'סוער';
+        return 'מעונן';
+    }
 
-            const [selectedCity, setSelectedCity] = useState(() => {
-                const saved = localStorage.getItem('selectedCity_v1');
-                return (saved && CITIES[saved]) ? saved : 'ashdod';
-            });
 
-            const [visibleIds, setVisibleIds] = useState(() => {
-                const saved = localStorage.getItem('visibleZmanim_v4');
-                return saved ? JSON.parse(saved) : ['alot', 'sunrise', 'shema', 'tefillah', 'chatzot', 'mincha_g', 'plag', 'shkia', 'tzeit', 'chatzot_l'];
-            });
 
-            const [reminders, setReminders] = useState(() => {
-                const saved = localStorage.getItem('zmanReminders_v4');
-                return saved ? JSON.parse(saved) : [];
-            });
 
-            useEffect(() => {
-                localStorage.setItem('visibleZmanim_v4', JSON.stringify(visibleIds));
-            }, [visibleIds]);
 
-            useEffect(() => {
-                localStorage.setItem('zmanReminders_v4', JSON.stringify(reminders));
-            }, [reminders]);
+    function App() {
+        const [now, setNow] = useState(new Date());
+        const [data, setData] = useState(null);
+        const [zmanim, setZmanim] = useState([]);
+        const [loading, setLoading] = useState(true);
+        const [showSettings, setShowSettings] = useState(false);
+        const [weather, setWeather] = useState(null);
 
-            useEffect(() => {
-                localStorage.setItem('selectedCity_v1', selectedCity);
-            }, [selectedCity]);
+        const [selectedCity, setSelectedCity] = useState(() => {
+            const saved = localStorage.getItem('selectedCity_v1');
+            return (saved && CITIES[saved]) ? saved : 'ashdod';
+        });
 
-            const fetchData = useCallback(async () => {
-                try {
-                    const coords = CITIES[selectedCity];
+        const [visibleIds, setVisibleIds] = useState(() => {
+            const saved = localStorage.getItem('visibleZmanim_v4');
+            return saved ? JSON.parse(saved) : ['alot', 'sunrise', 'shema', 'tefillah', 'chatzot', 'mincha_g', 'plag', 'shkia', 'tzeit', 'chatzot_l'];
+        });
 
-                    if (!coords) {
-                        console.error("Ville invalide:", selectedCity);
-                        return;
-                    }
+        const [reminders, setReminders] = useState(() => {
+            const saved = localStorage.getItem('zmanReminders_v4');
+            return saved ? JSON.parse(saved) : [];
+        });
 
-                    const today = new Date();
-                    const iso = today.toISOString().split('T')[0];
-                    const y = today.getFullYear(), m = today.getMonth() + 1, d = today.getDate();
+        useEffect(() => {
+            localStorage.setItem('visibleZmanim_v4', JSON.stringify(visibleIds));
+        }, [visibleIds]);
 
-                    const daysUntilSat = (6 - today.getDay() + 7) % 7;
-                    const sat = new Date(today);
-                    sat.setDate(today.getDate() + daysUntilSat);
-                    const satIso = sat.toISOString().split('T')[0];
+        useEffect(() => {
+            localStorage.setItem('zmanReminders_v4', JSON.stringify(reminders));
+        }, [reminders]);
 
-                    const [solarRes, hebDateRes, dailyRes, weatherRes] = await Promise.all([
-                        fetch(`https://api.sunrisesunset.io/json?lat=${coords.lat}&lng=${coords.lng}&date=${iso}`).then(r => r.json()),
-                        fetch(`https://www.hebcal.com/converter?cfg=json&gy=${y}&gm=${m}&gd=${d}&g2h=1`).then(r => r.json()),
-                        fetch(`https://www.hebcal.com/hebcal?v=1&cfg=json&maj=on&min=on&mod=on&nx=on&start=${iso}&end=${satIso}&ss=on&mf=on&c=off&geo=none&F=on&heb=on&s=on`).then(r => r.json()),
-                        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lng}&hourly=temperature_2m,weather_code&timezone=auto&forecast_days=1`).then(r => r.json())
-                    ]);
+        useEffect(() => {
+            localStorage.setItem('selectedCity_v1', selectedCity);
+        }, [selectedCity]);
 
-                    const extracted = getWeatherAtHours(weatherRes, [7, 12]);
-                    setWeather(extracted);
+        const fetchData = useCallback(async () => {
+            try {
+                setLoading(true);
 
-                    const solar = solarRes.results;
-                    const items = dailyRes.items || [];
-
-                    const daf = items.find(i => i.category === 'dafyomi' && i.date === iso)?.hebrew || "---";
-                    const parashaEvent = items.find(i => i.category === 'parashat' && i.date === satIso);
-                    const parashaHeb = parashaEvent ? parashaEvent.hebrew.replace('פרשת ', '') : "---";
-                    const parashaEng = parashaEvent ? parashaEvent.title.replace('Parashat ', '') : "---";
-
-                    const specialEvents = items.filter(i =>
-                        (i.category === 'holiday' || i.category === 'roshchodesh') && i.date === iso
-                    );
-
-                    const holidayInfo = specialEvents.map(e => ({
-                        text: e.hebrew,
-                        isFast: e.subcat === 'fast' || e.title.toLowerCase().includes('fast') || e.hebrew.includes('צום') || e.hebrew.includes('תענית')
-                    }));
-
-                    const sunrise = parseTime(solar.sunrise, today);
-                    const sunset = parseTime(solar.sunset, today);
-                    const dawn = parseTime(solar.dawn, today);
-                    const dusk = parseTime(solar.dusk, today);
-                    const noon = parseTime(solar.solar_noon, today);
-                    const shaah = (sunset.getTime() - sunrise.getTime()) / 12;
-
-                    const chatzotLaila = new Date(noon.getTime() + 12 * 60 * 60 * 1000);
-
-                    const list = [
-                        { id: 'alot', label: 'עלות השחר', fullTime: dawn, time: formatTime(dawn) },
-                        { id: 'sunrise', label: 'נץ החמה', fullTime: sunrise, time: formatTime(sunrise) },
-                        { id: 'shema', label: 'סוף זמן שמע', fullTime: new Date(sunrise.getTime() + 3 * shaah), time: formatTime(new Date(sunrise.getTime() + 3 * shaah)) },
-                        { id: 'tefillah', label: 'סוף זמן תפילה', fullTime: new Date(sunrise.getTime() + 4 * shaah), time: formatTime(new Date(sunrise.getTime() + 4 * shaah)) },
-                        { id: 'chatzot', label: 'חצות היום', fullTime: noon, time: formatTime(noon) },
-                        { id: 'mincha_g', label: 'מנחה גדולה', fullTime: new Date(noon.getTime() + 0.5 * shaah), time: formatTime(new Date(noon.getTime() + 0.5 * shaah)) },
-                        { id: 'plag', label: 'פלג המנחה', fullTime: new Date(sunrise.getTime() + 10.75 * shaah), time: formatTime(new Date(sunrise.getTime() + 10.75 * shaah)) },
-                        { id: 'shkia', label: 'שקיעה', fullTime: sunset, time: formatTime(sunset) },
-                        { id: 'tzeit', label: 'צאת הכוכבים', fullTime: dusk, time: formatTime(dusk) },
-                        { id: 'chatzot_l', label: 'חצות לילה', fullTime: chatzotLaila, time: formatTime(chatzotLaila) }
-                    ];
-
-                    setData({
-                        hebrewDate: hebDateRes.hebrew,
-                        daf,
-                        parashaHeb,
-                        parashaEng,
-                        holidays: holidayInfo,
-                        gregorianDate: `${d.toString().padStart(2, '0')}.${m.toString().padStart(2, '0')}.${y}`
-                    });
-                    setZmanim(list);
+                const coords = CITIES[selectedCity];
+                if (!coords) {
                     setLoading(false);
-                } catch (e) {
-                    console.error("API Error:", e);
-                }
-            }, [selectedCity]);
-
-            useEffect(() => { fetchData(); }, [fetchData]);
-
-            useEffect(() => {
-                const timer = setInterval(() => setNow(new Date()), 1000);
-                return () => clearInterval(timer);
-            }, []);
-
-            useEffect(() => {
-                let lastCheckedDate = new Date().toDateString();
-
-                const dayCheckTimer = setInterval(() => {
-                    const currentDate = new Date().toDateString();
-                    if (currentDate !== lastCheckedDate) {
-                        lastCheckedDate = currentDate;
-                        fetchData();
-                    }
-                }, 60000);
-
-                return () => clearInterval(dayCheckTimer);
-            }, [fetchData]);
-
-            const nextZman = useMemo(() => {
-                if (!zmanim.length) return null;
-                const sorted = [...zmanim].sort((a,b) => a.fullTime - b.fullTime);
-                let next = sorted.find(z => z.fullTime > now);
-                if (!next) next = sorted[0];
-                return next;
-            }, [zmanim, now]);
-
-            const activeZman = useMemo(() => {
-                const sorted = [...zmanim].sort((a,b) => a.fullTime - b.fullTime);
-                return sorted.find(z => {
-                    const diff = now.getTime() - z.fullTime.getTime();
-                    return diff > 0 && diff <= 30000;
-                }) || null;
-            }, [zmanim, now]);
-
-            const countdownData = useMemo(() => {
-                if (activeZman) {
-                    return {
-                        isProgressBar: true,
-                        colorClass: "text-blue-500 glow-blue",
-                        label: activeZman.label,
-                        time: activeZman.time
-                    };
+                    return;
                 }
 
-                if (!nextZman) return null;
-                const diff = nextZman.fullTime.getTime() - now.getTime();
+                const nowLocal = new Date();
+                const civilDate = new Date(nowLocal);
+                const civilIso = getLocalISODate(civilDate);
+                const tomorrowDate = addDays(civilDate, 1);
+                const tomorrowIso = getLocalISODate(tomorrowDate);
 
-                if (diff > 0 && diff <= 1800000) {
-                    const m = Math.floor(diff / 60000);
-                    const s = Math.floor((diff % 60000) / 1000);
-                    const timeString = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+                const solarRes = await fetch(
+                    `https://api.sunrisesunset.io/json?lat=${coords.lat}&lng=${coords.lng}&date=${civilIso}`
+                ).then(r => r.json());
 
-                    let colorClass = "text-green-500 glow-green";
-                    if (diff <= 60000) {
-                        colorClass = "text-red-600 glow-red";
-                    } else if (diff <= 300000) {
-                        colorClass = "text-orange-500 glow-orange";
-                    }
+                const solar = solarRes.results;
 
-                    return { timeString, colorClass, isProgressBar: false };
+                const sunrise = parseTime(solar.sunrise, civilDate);
+                const sunset = parseTime(solar.sunset, civilDate);
+                const dawn = parseTime(solar.dawn, civilDate);
+                const dusk = parseTime(solar.dusk, civilDate);
+                const noon = parseTime(solar.solar_noon, civilDate);
+
+                const shaah = (sunset.getTime() - sunrise.getTime()) / 12;
+                const chatzotLaila = new Date(noon.getTime() + 12 * 60 * 60 * 1000);
+
+                const isAfterSunset = nowLocal >= sunset;
+                const effectiveDate = isAfterSunset ? tomorrowDate : civilDate;
+                const effectiveIso = isAfterSunset ? tomorrowIso : civilIso;
+
+                const daysUntilSat = (6 - effectiveDate.getDay() + 7) % 7;
+                const sat = addDays(effectiveDate, daysUntilSat);
+                const satIso = getLocalISODate(sat);
+
+                const y = effectiveDate.getFullYear();
+                const m = effectiveDate.getMonth() + 1;
+                const d = effectiveDate.getDate();
+
+                const [hebDateRes, dailyRes, weatherRes] = await Promise.all([
+                    fetch(`https://www.hebcal.com/converter?cfg=json&gy=${y}&gm=${m}&gd=${d}&g2h=1`).then(r => r.json()),
+                    fetch(`https://www.hebcal.com/hebcal?v=1&cfg=json&maj=on&min=on&mod=on&nx=on&start=${civilIso}&end=${satIso}&ss=on&mf=on&c=off&geo=none&F=on&heb=on&s=on&o=on`).then(r => r.json()),
+                    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lng}&hourly=temperature_2m,weather_code&timezone=auto&forecast_days=1`).then(r => r.json())
+                ]);
+
+                const extracted = getWeatherAtHours(weatherRes, [7, 12]);
+                setWeather(extracted);
+
+                const items = dailyRes.items || [];
+
+                const daf = items.find(i => i.category === 'dafyomi' && i.date === effectiveIso)?.hebrew || "---";
+
+                const parashaEvent = items.find(i => i.category === 'parashat' && i.date === satIso);
+                const parashaHeb = parashaEvent ? parashaEvent.hebrew.replace('פרשת ', '') : "---";
+
+                const specialEvents = items.filter(i =>
+                    (i.category === 'holiday' || i.category === 'roshchodesh') &&
+                    i.date === effectiveIso
+                );
+
+                const holidayInfo = specialEvents.map(e => ({
+                    text: e.hebrew,
+                    isFast:
+                        e.subcat === 'fast' ||
+                        e.title?.toLowerCase().includes('fast') ||
+                        e.hebrew?.includes('צום') ||
+                        e.hebrew?.includes('תענית')
+                }));
+
+const omerItem = items.find(i => i.category === 'omer' && i.date === effectiveIso) || null;
+const omer = omerItem?.omer?.count?.he || null;
+
+                const list = [
+                    { id: 'alot', label: 'עלות השחר', fullTime: dawn, time: formatTime(dawn) },
+                    { id: 'sunrise', label: 'נץ החמה', fullTime: sunrise, time: formatTime(sunrise) },
+                    { id: 'shema', label: 'סוף זמן שמע', fullTime: new Date(sunrise.getTime() + 3 * shaah), time: formatTime(new Date(sunrise.getTime() + 3 * shaah)) },
+                    { id: 'tefillah', label: 'סוף זמן תפילה', fullTime: new Date(sunrise.getTime() + 4 * shaah), time: formatTime(new Date(sunrise.getTime() + 4 * shaah)) },
+                    { id: 'chatzot', label: 'חצות היום', fullTime: noon, time: formatTime(noon) },
+                    { id: 'mincha_g', label: 'מנחה גדולה', fullTime: new Date(noon.getTime() + 0.5 * shaah), time: formatTime(new Date(noon.getTime() + 0.5 * shaah)) },
+                    { id: 'plag', label: 'פלג המנחה', fullTime: new Date(sunrise.getTime() + 10.75 * shaah), time: formatTime(new Date(sunrise.getTime() + 10.75 * shaah)) },
+                    { id: 'shkia', label: 'שקיעה', fullTime: sunset, time: formatTime(sunset) },
+                    { id: 'tzeit', label: 'צאת הכוכבים', fullTime: dusk, time: formatTime(dusk) },
+                    { id: 'chatzot_l', label: 'חצות לילה', fullTime: chatzotLaila, time: formatTime(chatzotLaila) }
+                ];
+
+                setData({
+                    hebrewDate: hebDateRes.hebrew,
+                    daf,
+                    parashaHeb,
+                    holidays: holidayInfo,
+                    gregorianDate: `${String(effectiveDate.getDate()).padStart(2, '0')}.${String(effectiveDate.getMonth() + 1).padStart(2, '0')}.${effectiveDate.getFullYear()}`,
+                    omer
+                });
+
+                setZmanim(list);
+                setLoading(false);
+            } catch (e) {
+                console.error("API Error:", e);
+                setLoading(false);
+            }
+        }, [selectedCity]);
+
+        useEffect(() => {
+            fetchData();
+        }, [fetchData]);
+
+        useEffect(() => {
+            const timer = setInterval(() => setNow(new Date()), 1000);
+            return () => clearInterval(timer);
+        }, []);
+
+        useEffect(() => {
+            let lastCheckedDate = new Date().toDateString();
+
+            const dayCheckTimer = setInterval(() => {
+                const currentDate = new Date().toDateString();
+                if (currentDate !== lastCheckedDate) {
+                    lastCheckedDate = currentDate;
+                    fetchData();
                 }
-                return null;
-            }, [nextZman, activeZman, now]);
+            }, 60000);
 
-            if (loading) return (
-                <div className="h-screen flex items-center justify-center bg-black">
-                    <div className="text-yellow-400 font-bold text-2xl animate-pulse digital-font tracking-[0.5em]">LOADING...</div>
-                </div>
-            );
+            return () => clearInterval(dayCheckTimer);
+        }, [fetchData]);
 
-            const curTime = formatTime(now);
-            const visibleZmanim = zmanim.filter(z => visibleIds.includes(z.id)).sort((a,b) => a.fullTime - b.fullTime);
+        const nextZman = useMemo(() => {
+            if (!zmanim.length) return null;
+            const sorted = [...zmanim].sort((a, b) => a.fullTime - b.fullTime);
+            let next = sorted.find(z => z.fullTime > now);
+            if (!next) next = sorted[0];
+            return next;
+        }, [zmanim, now]);
 
-            return (
-                <div className="h-screen flex flex-col justify-between px-6 py-3 overflow-hidden bg-black text-white">
+        const activeZman = useMemo(() => {
+            const sorted = [...zmanim].sort((a, b) => a.fullTime - b.fullTime);
+            return sorted.find(z => {
+                const diff = now.getTime() - z.fullTime.getTime();
+                return diff > 0 && diff <= 30000;
+            }) || null;
+        }, [zmanim, now]);
 
-                    <header className="w-full border-b border-white/10 pb-4 pt-3 shrink-0">
-                        <div className="flex flex-row-reverse items-center justify-between">
+        const countdownData = useMemo(() => {
+            if (activeZman) {
+                return {
+                    isProgressBar: true,
+                    colorClass: "text-blue-500 glow-blue",
+                    label: activeZman.label,
+                    time: activeZman.time
+                };
+            }
 
-                            <div className="flex items-center gap-6">
-                                <div className="text-yellow-400 digital-font font-black text-6xl leading-none">
-                                    {curTime}
+            if (!nextZman) return null;
+            const diff = nextZman.fullTime.getTime() - now.getTime();
+
+            if (diff > 0 && diff <= 1800000) {
+                const m = Math.floor(diff / 60000);
+                const s = Math.floor((diff % 60000) / 1000);
+                const timeString = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+
+                let colorClass = "text-green-500 glow-green";
+                if (diff <= 60000) {
+                    colorClass = "text-red-600 glow-red";
+                } else if (diff <= 300000) {
+                    colorClass = "text-orange-500 glow-orange";
+                }
+
+                return { timeString, colorClass, isProgressBar: false };
+            }
+
+            return null;
+        }, [nextZman, activeZman, now]);
+
+        if (loading) return (
+            <div className="h-screen flex items-center justify-center bg-black">
+                <div className="text-yellow-400 font-bold text-2xl animate-pulse digital-font tracking-[0.5em]">LOADING...</div>
+            </div>
+        );
+
+        const curTime = formatTime(now);
+        const visibleZmanim = zmanim
+            .filter(z => visibleIds.includes(z.id))
+            .sort((a, b) => a.fullTime - b.fullTime);
+
+        return (
+            <div className="h-screen flex flex-col justify-between px-6 py-3 overflow-hidden bg-black text-white">
+
+                <header className="w-full border-b border-white/10 pb-4 pt-3 shrink-0">
+                    <div className="flex flex-row-reverse items-center justify-between">
+
+                        <div className="flex items-center gap-6">
+                            <div className="text-yellow-400 digital-font font-black text-6xl leading-none">
+                                {curTime}
+                            </div>
+
+                            <div className="separator"></div>
+
+                            <div className="header-card">
+                                <div className="text-green-400 text-xl md:text-3xl font-black leading-none mb-2">
+                                    {CITIES[selectedCity].name}
                                 </div>
-
-                                <div className="separator"></div>
-
-                                <div className="header-card">
-                                    <div className="text-green-400 text-xl md:text-3xl font-black leading-none mb-2">
-                                        {CITIES[selectedCity].name}
-                                    </div>
-                                    {weather?.weather7h && weather?.weather12h && (
-                                        <div className="flex gap-3 items-center justify-center">
-                                            <div className="text-center">
-                                                <div className="text-cyan-400 text-3xl font-black">
-                                                    {weather.weather7h.temp}°
-                                                </div>
-                                                <div className="text-cyan-300/60 text-[16px] font-bold">
-                                                    {getWeatherDesc(weather.weather7h.code)}
-                                                </div>
+                                {weather?.weather7h && weather?.weather12h && (
+                                    <div className="flex gap-3 items-center justify-center">
+                                        <div className="text-center">
+                                            <div className="text-cyan-400 text-3xl font-black">
+                                                {weather.weather7h.temp}°
                                             </div>
-                                            <div className="text-white/20 text-lg">/</div>
-                                            <div className="text-center">
-                                                <div className="text-orange-400 text-3xl font-black">
-                                                    {weather.weather12h.temp}°
-                                                </div>
-                                                <div className="text-orange-300/60 text-[16px] font-bold">
-                                                    {getWeatherDesc(weather.weather12h.code)}
-                                                </div>
+                                            <div className="text-cyan-300/60 text-[16px] font-bold">
+                                                {getWeatherDesc(weather.weather7h.code)}
                                             </div>
                                         </div>
-                                    )}
-                                </div>
-
-                                <div className="separator"></div>
-
-                                <div className="header-card">
-                                    <div className="text-blue-400 text-3xl md:text-5xl font-black leading-none">
-                                        {HEBREW_DAYS[now.getDay()]}
-                                    </div>
-                                </div>
-
-                                <div className="header-card">
-                                    <div className="text-sky-400/50 text-[16px] font-black uppercase tracking-[0.2em] mb-1">פרשת</div>
-                                    <div className="text-sky-300 text-4xl md:text-5xl font-black parasha-glow leading-none">
-                                        {data?.parashaHeb || "---"}
-                                    </div>
-                                </div>
-
-                                {data?.holidays && data.holidays.length > 0 && (
-                                    <div className="flex gap-3 items-center">
-                                        {data.holidays.map((h, i) => (
-                                            <div key={i} className={`font-black text-2xl md:text-3xl whitespace-nowrap animate-pulse ${h.isFast ? 'fast-day-badge' : 'holiday-badge text-yellow-400'}`}>
-                                                {h.text}
+                                        <div className="text-white/20 text-lg">/</div>
+                                        <div className="text-center">
+                                            <div className="text-orange-400 text-3xl font-black">
+                                                {weather.weather12h.temp}°
                                             </div>
-                                        ))}
+                                            <div className="text-orange-300/60 text-[16px] font-bold">
+                                                {getWeatherDesc(weather.weather12h.code)}
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
                             </div>
 
-                            <div className="flex items-center gap-6">
-                                <button
-                                    onClick={() => setShowSettings(true)}
-                                    className="text-white/20 hover:text-yellow-400 transition-all hover:rotate-90 p-2"
-                                >
-                                    <i className="fa-solid fa-gear text-4xl"></i>
-                                </button>
+                            <div className="separator"></div>
 
-                                <div className="header-card">
-                                    <div className="text-white/30 text-[16px] uppercase tracking-widest mb-1">דף היומי</div>
-                                    <div className="text-green-400 text-3xl font-black whitespace-nowrap">
-                                        {data?.daf || "---"}
-                                    </div>
-                                </div>
-
-                                <div className="separator"></div>
-
-                                <div className="header-card text-left">
-                                    <div className="text-sky-100 text-3xl font-black whitespace-nowrap mb-1">
-                                        {data?.hebrewDate || "---"}
-                                    </div>
-                                    <div className="text-white/40 text-xl digital-font font-bold tracking-wider">
-                                        {data?.gregorianDate || "---"}
-                                    </div>
+                            <div className="header-card">
+                                <div className="text-blue-400 text-3xl md:text-5xl font-black leading-none">
+                                    {HEBREW_DAYS[now.getDay()]}
                                 </div>
                             </div>
+
+                            <div className="header-card">
+                                <div className="text-sky-400/50 text-[16px] font-black uppercase tracking-[0.2em] mb-1">פרשת</div>
+                                <div className="text-sky-300 text-4xl md:text-5xl font-black parasha-glow leading-none">
+                                    {data?.parashaHeb || "---"}
+                                </div>
+                            </div>
+
+                            {data?.holidays && data.holidays.length > 0 && (
+                                <div className="flex gap-3 items-center">
+                                    {data.holidays.map((h, i) => (
+                                        <div
+                                            key={i}
+                                            className={`font-black text-2xl md:text-3xl whitespace-nowrap animate-pulse ${h.isFast ? 'fast-day-badge' : 'holiday-badge text-yellow-400'}`}
+                                        >
+                                            {h.text}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
-                    </header>
 
-                    <main className="flex-grow flex flex-col items-center justify-center relative min-h-0">
-                        {countdownData ? (
-                            <div className="flex flex-col items-center w-full max-w-6xl">
-                                {countdownData.isProgressBar ? (
-                                    <>
-                                        <div className="text-blue-500 text-3xl md:text-5xl font-black uppercase tracking-[0.4em] mb-6 animate-pulse">
-                                            {countdownData.label} - זמן הגיע
-                                        </div>
-                                        <div className="text-[8rem] md:text-[16rem] leading-none digital-font font-black text-blue-400 mb-8">
-                                            {countdownData.time.slice(0, 5)}
-                                        </div>
-                                        <div className="w-full bg-white/10 rounded-full h-8 md:h-12 overflow-hidden border-2 border-blue-500 shadow-lg shadow-blue-500/50">
-                                            <div className="progress-animation h-full bg-gradient-to-r from-blue-600 via-blue-400 to-blue-300 shadow-lg"></div>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <>
-                                        <div className={`${countdownData.colorClass.split(' ')[0]} text-3xl md:text-5xl font-black uppercase tracking-[0.4em] mb-6 animate-pulse`}>
-                                            {nextZman?.label} בעוד
-                                        </div>
-                                        <div className={`text-[12rem] md:text-[22rem] leading-none digital-font font-black ${countdownData.colorClass}`}>
-                                            {countdownData.timeString}
-                                        </div>
-                                        <div className="mt-8 text-2xl md:text-5xl text-white/10 digital-font font-bold uppercase tracking-[0.5em]">
-                                            HORAIRE: {curTime}
-                                        </div>
-                                    </>
-                                )}
+                        <div className="flex items-center gap-6">
+                            <button
+                                onClick={() => setShowSettings(true)}
+                                className="text-white/20 hover:text-yellow-400 transition-all hover:rotate-90 p-2"
+                            >
+                                <i className="fa-solid fa-gear text-4xl"></i>
+                            </button>
+
+                            <div className="header-card">
+                                <div className="text-white/30 text-[16px] uppercase tracking-widest mb-1">דף היומי</div>
+                                <div className="text-green-400 text-3xl font-black whitespace-nowrap">
+                                    {data?.daf || "---"}
+                                </div>
                             </div>
-                        ) : (
-                            <div className="text-center">
-                                {nextZman && (
-                                    <div className="mb-8 md:mb-16">
-                                        <div className="text-white/20 uppercase tracking-[0.5em] text-[10px] md:text-xs font-bold mb-3">Prochain horaire</div>
-                                        <div className="text-6xl md:text-9xl font-black text-white glow-text">{nextZman.label}</div>
-                                        <div className="text-3xl md:text-5xl text-yellow-400 mt-2 md:mt-4 digital-font font-black">{nextZman.time.slice(0, 5)}</div>
+
+                            <div className="separator"></div>
+
+                            <div className="header-card text-left">
+                                <div className="text-sky-100 text-3xl font-black whitespace-nowrap mb-1">
+                                    {data?.hebrewDate || "---"}
+                                </div>
+
+                                {data?.omer && (
+                                    <div className="text-purple-400 text-xl font-black whitespace-nowrap mb-1">
+                                        {data.omer}
                                     </div>
                                 )}
-                                <div className="text-yellow-400/20 text-[10px] md:text-sm font-bold tracking-[1em] mb-4 uppercase">Horloge Actuelle</div>
-                                <h1 className="text-[10rem] md:text-[20rem] leading-none font-black digital-font text-white glow-text tracking-tighter">
-                                    {curTime.slice(0, 5)}
-                                </h1>
-                            </div>
-                        )}
-                    </main>
 
-                    <footer className="w-full footer-gradient backdrop-blur-lg rounded-3xl py-4 border border-white/10 shadow-2xl shrink-0">
-                        <div className="flex flex-row-reverse flex-wrap gap-1 md:gap-2 justify-center px-2">
-                            {visibleZmanim.map(z => {
-                                const isActive = nextZman?.id === z.id;
-                                const hasReminder = reminders.includes(z.id);
-                                return (
-                                    <div
-                                        key={z.id}
-                                        onClick={() => {
-                                            setReminders(prev => prev.includes(z.id) ? prev.filter(i => i !== z.id) : [...prev, z.id]);
-                                        }}
-                                        className={`zman-card rounded-xl px-2 py-2 md:px-3 md:py-3 flex flex-col items-center min-w-[80px] md:min-w-[110px] flex-grow md:flex-grow-0 transition-all ${isActive ? 'active-zman' : ''} ${z.fullTime < now ? 'opacity-50' : ''}`}
-                                    >
-                                        {hasReminder && <i className="fa-solid fa-bell reminder-icon"></i>}
-                                        <span className="text-[8px] md:text-[15px] text-white/40 font-black mb-1 whitespace-nowrap uppercase tracking-tighter">
-                                            {z.label}
-                                        </span>
-                                        <span className={`text-lg md:text-2xl digital-font font-bold tracking-tight ${isActive ? 'text-yellow-400' : 'text-white'}`}>
-                                            {z.time.slice(0, 5)}
-                                        </span>
-                                    </div>
-                                );
-                            })}
-                        </div>
-
-                        <div className="text-center text-[7px] md:text-[9px] text-white/10 uppercase tracking-[0.6em] mt-2 font-bold">
-                            {CITIES[selectedCity].name} Dashboard • Method Gra • GPS: {CITIES[selectedCity].lat}, {CITIES[selectedCity].lng}
-                        </div>
-                    </footer>
-
-                    {showSettings && (
-                        <div className="fixed inset-0 modal-overlay z-50 flex items-center justify-center p-6" onClick={() => setShowSettings(false)}>
-                            <div className="bg-[#0a0a0a] border-2 border-white/20 rounded-[3rem] p-10 max-w-3xl w-full shadow-[0_0_100px_rgba(251,206,7,0.2)] max-h-[90vh] overflow-y-auto no-scrollbar" onClick={e => e.stopPropagation()}>
-                                <h2 className="text-3xl font-black mb-8 text-yellow-400 text-center uppercase tracking-widest border-b-2 border-white/10 pb-4">
-                                    <i className="fa-solid fa-sliders mr-3"></i>
-                                    Configuration
-                                </h2>
-
-                                <div className="mb-8">
-                                    <h3 className="text-xl font-black text-sky-400 mb-4 text-center">
-                                        <i className="fa-solid fa-location-dot ml-2"></i>
-                                        בחר עיר
-                                    </h3>
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                        {Object.entries(CITIES).map(([key, city]) => (
-                                            <button
-                                                key={key}
-                                                onClick={() => setSelectedCity(key)}
-                                                className={`p-4 rounded-xl font-bold text-lg transition-all ${
-                                                    selectedCity === key
-                                                        ? 'bg-sky-500 text-white border-2 border-sky-300 shadow-lg shadow-sky-500/50'
-                                                        : 'bg-white/5 text-white/60 border border-white/10 hover:bg-white/10'
-                                                }`}
-                                            >
-                                                {city.name}
-                                            </button>
-                                        ))}
-                                    </div>
+                                <div className="text-white/40 text-xl digital-font font-bold tracking-wider">
+                                    {data?.gregorianDate || "---"}
                                 </div>
-
-                                <div>
-                                    <h3 className="text-xl font-black text-yellow-400 mb-4 text-center">
-                                        <i className="fa-solid fa-clock ml-2"></i>
-                                        זמנים להצגה
-                                    </h3>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        {zmanim.map(z => (
-                                            <label key={z.id} className={`flex items-center justify-between gap-4 p-5 rounded-2xl cursor-pointer transition-all ${visibleIds.includes(z.id) ? 'bg-white/10 border-2 border-white/20' : 'bg-white/5 border border-transparent opacity-50'}`}>
-                                                <span className="text-lg font-bold">{z.label}</span>
-                                                <input
-                                                    type="checkbox"
-                                                    checked={visibleIds.includes(z.id)}
-                                                    onChange={() => setVisibleIds(prev => prev.includes(z.id) ? prev.filter(i => i !== z.id) : [...prev, z.id])}
-                                                    className="w-6 h-6 accent-yellow-400 rounded-lg cursor-pointer"
-                                                />
-                                            </label>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <button
-                                    onClick={() => setShowSettings(false)}
-                                    className="mt-8 w-full bg-yellow-400 text-black py-4 rounded-2xl font-black text-xl hover:bg-yellow-300 transition-all uppercase shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/50"
-                                >
-                                    <i className="fa-solid fa-check mr-2"></i>
-                                    Valider et Fermer
-                                </button>
                             </div>
+                        </div>
+                    </div>
+                </header>
+
+                <main className="flex-grow flex flex-col items-center justify-center relative min-h-0">
+                    {countdownData ? (
+                        <div className="flex flex-col items-center w-full max-w-6xl">
+                            {countdownData.isProgressBar ? (
+                                <>
+                                    <div className="text-blue-500 text-3xl md:text-5xl font-black uppercase tracking-[0.4em] mb-6 animate-pulse">
+                                        {countdownData.label} - זמן הגיע
+                                    </div>
+                                    <div className="text-[8rem] md:text-[16rem] leading-none digital-font font-black text-blue-400 mb-8">
+                                        {countdownData.time.slice(0, 5)}
+                                    </div>
+                                    <div className="w-full bg-white/10 rounded-full h-8 md:h-12 overflow-hidden border-2 border-blue-500 shadow-lg shadow-blue-500/50">
+                                        <div className="progress-animation h-full bg-gradient-to-r from-blue-600 via-blue-400 to-blue-300 shadow-lg"></div>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className={`${countdownData.colorClass.split(' ')[0]} text-3xl md:text-5xl font-black uppercase tracking-[0.4em] mb-6 animate-pulse`}>
+                                        {nextZman?.label} בעוד
+                                    </div>
+                                    <div className={`text-[12rem] md:text-[22rem] leading-none digital-font font-black ${countdownData.colorClass}`}>
+                                        {countdownData.timeString}
+                                    </div>
+                                    <div className="mt-8 text-2xl md:text-5xl text-white/10 digital-font font-bold uppercase tracking-[0.5em]">
+                                        HORAIRE: {curTime}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    ) : (
+                        <div className="text-center">
+                            {nextZman && (
+                                <div className="mb-8 md:mb-16">
+                                    <div className="text-white/20 uppercase tracking-[0.5em] text-[10px] md:text-xs font-bold mb-3">Prochain horaire</div>
+                                    <div className="text-6xl md:text-9xl font-black text-white glow-text">{nextZman.label}</div>
+                                    <div className="text-3xl md:text-5xl text-yellow-400 mt-2 md:mt-4 digital-font font-black">{nextZman.time.slice(0, 5)}</div>
+                                </div>
+                            )}
+                            <div className="text-yellow-400/20 text-[10px] md:text-sm font-bold tracking-[1em] mb-4 uppercase">Horloge Actuelle</div>
+                            <h1 className="text-[10rem] md:text-[20rem] leading-none font-black digital-font text-white glow-text tracking-tighter">
+                                {curTime.slice(0, 5)}
+                            </h1>
                         </div>
                     )}
-                </div>
-            );
-        }
+                </main>
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+                <footer className="w-full footer-gradient backdrop-blur-lg rounded-3xl py-4 border border-white/10 shadow-2xl shrink-0">
+                    <div className="flex flex-row-reverse flex-wrap gap-1 md:gap-2 justify-center px-2">
+                        {visibleZmanim.map(z => {
+                            const isActive = nextZman?.id === z.id;
+                            const hasReminder = reminders.includes(z.id);
+                            return (
+                                <div
+                                    key={z.id}
+                                    onClick={() => {
+                                        setReminders(prev =>
+                                            prev.includes(z.id)
+                                                ? prev.filter(i => i !== z.id)
+                                                : [...prev, z.id]
+                                        );
+                                    }}
+                                    className={`zman-card rounded-xl px-2 py-2 md:px-3 md:py-3 flex flex-col items-center min-w-[80px] md:min-w-[110px] flex-grow md:flex-grow-0 transition-all ${isActive ? 'active-zman' : ''} ${z.fullTime < now ? 'opacity-50' : ''}`}
+                                >
+                                    {hasReminder && <i className="fa-solid fa-bell reminder-icon"></i>}
+                                    <span className="text-[8px] md:text-[15px] text-white/40 font-black mb-1 whitespace-nowrap uppercase tracking-tighter">
+                                        {z.label}
+                                    </span>
+                                    <span className={`text-lg md:text-2xl digital-font font-bold tracking-tight ${isActive ? 'text-yellow-400' : 'text-white'}`}>
+                                        {z.time.slice(0, 5)}
+                                    </span>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    <div className="text-center text-[7px] md:text-[9px] text-white/10 uppercase tracking-[0.6em] mt-2 font-bold">
+                        {CITIES[selectedCity].name} Dashboard • Method Gra • GPS: {CITIES[selectedCity].lat}, {CITIES[selectedCity].lng}
+                    </div>
+                </footer>
+
+                {showSettings && (
+                    <div
+                        className="fixed inset-0 modal-overlay z-50 flex items-center justify-center p-6"
+                        onClick={() => setShowSettings(false)}
+                    >
+                        <div
+                            className="bg-[#0a0a0a] border-2 border-white/20 rounded-[3rem] p-10 max-w-3xl w-full shadow-[0_0_100px_rgba(251,206,7,0.2)] max-h-[90vh] overflow-y-auto no-scrollbar"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <h2 className="text-3xl font-black mb-8 text-yellow-400 text-center uppercase tracking-widest border-b-2 border-white/10 pb-4">
+                                <i className="fa-solid fa-sliders mr-3"></i>
+                                Configuration
+                            </h2>
+
+                            <div className="mb-8">
+                                <h3 className="text-xl font-black text-sky-400 mb-4 text-center">
+                                    <i className="fa-solid fa-location-dot ml-2"></i>
+                                    בחר עיר
+                                </h3>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                    {Object.entries(CITIES).map(([key, city]) => (
+                                        <button
+                                            key={key}
+                                            onClick={() => setSelectedCity(key)}
+                                            className={`p-4 rounded-xl font-bold text-lg transition-all ${
+                                                selectedCity === key
+                                                    ? 'bg-sky-500 text-white border-2 border-sky-300 shadow-lg shadow-sky-500/50'
+                                                    : 'bg-white/5 text-white/60 border border-white/10 hover:bg-white/10'
+                                            }`}
+                                        >
+                                            {city.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 className="text-xl font-black text-yellow-400 mb-4 text-center">
+                                    <i className="fa-solid fa-clock ml-2"></i>
+                                    זמנים להצגה
+                                </h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    {zmanim.map(z => (
+                                        <label
+                                            key={z.id}
+                                            className={`flex items-center justify-between gap-4 p-5 rounded-2xl cursor-pointer transition-all ${
+                                                visibleIds.includes(z.id)
+                                                    ? 'bg-white/10 border-2 border-white/20'
+                                                    : 'bg-white/5 border border-transparent opacity-50'
+                                            }`}
+                                        >
+                                            <span className="text-lg font-bold">{z.label}</span>
+                                            <input
+                                                type="checkbox"
+                                                checked={visibleIds.includes(z.id)}
+                                                onChange={() =>
+                                                    setVisibleIds(prev =>
+                                                        prev.includes(z.id)
+                                                            ? prev.filter(i => i !== z.id)
+                                                            : [...prev, z.id]
+                                                    )
+                                                }
+                                                className="w-6 h-6 accent-yellow-400 rounded-lg cursor-pointer"
+                                            />
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={() => setShowSettings(false)}
+                                className="mt-8 w-full bg-yellow-400 text-black py-4 rounded-2xl font-black text-xl hover:bg-yellow-300 transition-all uppercase shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/50"
+                            >
+                                <i className="fa-solid fa-check mr-2"></i>
+                                Valider et Fermer
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+</script>
+
 </body>
 </html>
