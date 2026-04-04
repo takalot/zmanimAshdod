@@ -232,6 +232,24 @@
             localStorage.setItem('selectedCity_v1', selectedCity);
         }, [selectedCity]);
 
+
+useEffect(() => {
+    if (!zmanim.length) return;
+
+    const tzeitZman = zmanim.find(z => z.id === 'tzeit');
+    if (!tzeitZman) return;
+
+    const msUntilTzeit = tzeitZman.fullTime.getTime() - Date.now();
+
+    if (msUntilTzeit <= 0) return;
+
+    const timer = setTimeout(() => {
+        fetchData();
+    }, msUntilTzeit + 1000);
+
+    return () => clearTimeout(timer);
+}, [zmanim, fetchData]);
+
         const fetchData = useCallback(async () => {
             try {
                 setLoading(true);
@@ -263,9 +281,9 @@
                 const shaah = (sunset.getTime() - sunrise.getTime()) / 12;
                 const chatzotLaila = new Date(noon.getTime() + 12 * 60 * 60 * 1000);
 
-                const isAfterSunset = nowLocal >= sunset;
-                const effectiveDate = isAfterSunset ? tomorrowDate : civilDate;
-                const effectiveIso = isAfterSunset ? tomorrowIso : civilIso;
+const isAfterTzeit = nowLocal >= dusk;
+const effectiveDate = isAfterTzeit ? tomorrowDate : civilDate;
+const effectiveIso = isAfterTzeit ? tomorrowIso : civilIso;
 
                 const daysUntilSat = (6 - effectiveDate.getDay() + 7) % 7;
                 const sat = addDays(effectiveDate, daysUntilSat);
