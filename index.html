@@ -102,6 +102,37 @@
         .footer-gradient {
             background: linear-gradient(to top, rgba(0, 0, 0, 0.8), rgba(255, 255, 255, 0.05));
         }
+		
+				.pasuk-ticker {
+			position: relative;
+			width: 100%;
+			overflow: hidden;
+			white-space: nowrap;
+			mask-image: linear-gradient(to left, transparent 0%, white 8%, white 92%, transparent 100%);
+			-webkit-mask-image: linear-gradient(to left, transparent 0%, white 8%, white 92%, transparent 100%);
+		}
+
+		.pasuk-track {
+			display: inline-flex;
+			align-items: center;
+			gap: 3rem;
+			min-width: max-content;
+			animation: pasuk-scroll 28s linear infinite;
+			will-change: transform;
+		}
+
+		.pasuk-track:hover {
+			animation-play-state: paused;
+		}
+
+		@keyframes pasuk-scroll {
+			0% {
+				transform: translateX(0);
+			}
+			100% {
+				transform: translateX(50%);
+			}
+		}
     </style>
 </head>
 <body>
@@ -194,7 +225,38 @@
     }
 
 
+	async function fetchRandomPasuk() {
+    try {
+        // אחרי מות-קדשים → Vayikra 16-20
+        const chapter = Math.floor(Math.random() * 5) + 16;
 
+        const res = await fetch(
+            `https://www.sefaria.org/api/v3/texts/Leviticus.${chapter}?version=source&return_format=text_only`
+        );
+        const json = await res.json();
+
+        const verses = json?.versions?.[0]?.text || [];
+
+        const valid = verses
+            .map((t, i) => ({
+                verse: i + 1,
+                text: typeof t === 'string' ? t.trim() : ''
+            }))
+            .filter(v => v.text.length > 0);
+
+        if (!valid.length) return null;
+
+        const picked = valid[Math.floor(Math.random() * valid.length)];
+
+        return {
+            hebrewRef: `ויקרא ${chapter}:${picked.verse}`,
+            text: picked.text
+        };
+    } catch (e) {
+        console.error("Pasuk error:", e);
+        return null;
+    }
+}
 
 
     function App() {
@@ -204,6 +266,7 @@
         const [loading, setLoading] = useState(true);
         const [showSettings, setShowSettings] = useState(false);
         const [weather, setWeather] = useState(null);
+		const [randomPasuk, setRandomPasuk] = useState(null);
 
         const [selectedCity, setSelectedCity] = useState(() => {
             const saved = localStorage.getItem('selectedCity_v1');
@@ -349,6 +412,8 @@ const omer = omerItem?.omer?.count?.he || null;
                 });
 
                 setZmanim(list);
+				const pasuk = await fetchRandomPasuk();
+				setRandomPasuk(pasuk);
                 setLoading(false);
             } catch (e) {
                 console.error("API Error:", e);
@@ -440,107 +505,154 @@ const omer = omerItem?.omer?.count?.he || null;
         return (
             <div className="h-screen flex flex-col justify-between px-6 py-3 overflow-hidden bg-black text-white">
 
-                <header className="w-full border-b border-white/10 pb-4 pt-3 shrink-0">
-                    <div className="flex flex-row-reverse items-center justify-between">
+<header className="w-full border-b border-white/10 pb-4 pt-3 shrink-0">
+  <div className="flex flex-row-reverse items-center justify-between gap-4 min-w-0">
 
-                        <div className="flex items-center gap-6">
-                            <div className="text-yellow-400 digital-font font-black text-6xl leading-none">
-                                {curTime}
-                            </div>
+    {/* LEFT SIDE */}
+    <div className="flex items-center gap-4 min-w-0 flex-1">
 
-                            <div className="separator"></div>
+      {/* CLOCK */}
+      <div className="text-yellow-400 digital-font font-black text-6xl leading-none shrink-0">
+        {curTime}
+      </div>
 
-                            <div className="header-card">
-                                <div className="text-green-400 text-xl md:text-3xl font-black leading-none mb-2">
-                                    {CITIES[selectedCity].name}
-                                </div>
-                                {weather?.weather7h && weather?.weather12h && (
-                                    <div className="flex gap-3 items-center justify-center">
-                                        <div className="text-center">
-                                            <div className="text-cyan-400 text-3xl font-black">
-                                                {weather.weather7h.temp}°
-                                            </div>
-                                            <div className="text-cyan-300/60 text-[16px] font-bold">
-                                                {getWeatherDesc(weather.weather7h.code)}
-                                            </div>
-                                        </div>
-                                        <div className="text-white/20 text-lg">/</div>
-                                        <div className="text-center">
-                                            <div className="text-orange-400 text-3xl font-black">
-                                                {weather.weather12h.temp}°
-                                            </div>
-                                            <div className="text-orange-300/60 text-[16px] font-bold">
-                                                {getWeatherDesc(weather.weather12h.code)}
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
+      <div className="separator shrink-0"></div>
 
-                            <div className="separator"></div>
+      {/* CITY + WEATHER */}
+      <div className="header-card shrink-0">
+        <div className="text-green-400 text-xl md:text-3xl font-black leading-none mb-2">
+          {CITIES[selectedCity].name}
+        </div>
 
-                            <div className="header-card">
-                                <div className="text-blue-400 text-3xl md:text-5xl font-black leading-none">
-                                    {HEBREW_DAYS[now.getDay()]}
-                                </div>
-                            </div>
+        {weather?.weather7h && weather?.weather12h && (
+          <div className="flex gap-3 items-center justify-center">
+            <div className="text-center">
+              <div className="text-cyan-400 text-2xl md:text-3xl font-black">
+                {weather.weather7h.temp}°
+              </div>
+              <div className="text-cyan-300/60 text-xs md:text-sm font-bold">
+                {getWeatherDesc(weather.weather7h.code)}
+              </div>
+            </div>
 
-                            <div className="header-card">
-                                <div className="text-sky-400/50 text-[16px] font-black uppercase tracking-[0.2em] mb-1">פרשת</div>
-                                <div className="text-sky-300 text-4xl md:text-5xl font-black parasha-glow leading-none">
-                                    {data?.parashaHeb || "---"}
-                                </div>
-                            </div>
+            <div className="text-white/20 text-lg">/</div>
 
-                            {data?.holidays && data.holidays.length > 0 && (
-                                <div className="flex gap-3 items-center">
-                                    {data.holidays.map((h, i) => (
-                                        <div
-                                            key={i}
-                                            className={`font-black text-2xl md:text-3xl whitespace-nowrap animate-pulse ${h.isFast ? 'fast-day-badge' : 'holiday-badge text-yellow-400'}`}
-                                        >
-                                            {h.text}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
+            <div className="text-center">
+              <div className="text-orange-400 text-2xl md:text-3xl font-black">
+                {weather.weather12h.temp}°
+              </div>
+              <div className="text-orange-300/60 text-xs md:text-sm font-bold">
+                {getWeatherDesc(weather.weather12h.code)}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
-                        <div className="flex items-center gap-6">
-                            <button
-                                onClick={() => setShowSettings(true)}
-                                className="text-white/20 hover:text-yellow-400 transition-all hover:rotate-90 p-2"
-                            >
-                                <i className="fa-solid fa-gear text-4xl"></i>
-                            </button>
+      <div className="separator shrink-0"></div>
 
-                            <div className="header-card">
-                                <div className="text-white/30 text-[16px] uppercase tracking-widest mb-1">דף היומי</div>
-                                <div className="text-green-400 text-3xl font-black whitespace-nowrap">
-                                    {data?.daf || "---"}
-                                </div>
-                            </div>
+      {/* DAY + HOLIDAY */}
+      <div className="header-card flex flex-col items-center shrink-0 min-w-[150px]">
+        <div className="text-blue-400 text-3xl md:text-5xl font-black leading-none">
+          {HEBREW_DAYS[now.getDay()]}
+        </div>
 
-                            <div className="separator"></div>
+        {data?.holidays?.length > 0 && (
+          <div className="mt-2 flex flex-col items-center gap-1">
+            {data.holidays.map((h, i) => (
+              <div
+                key={i}
+                className={`text-xs md:text-sm font-black px-3 py-1 rounded-full whitespace-nowrap ${
+                  h.isFast
+                    ? 'bg-red-500/20 text-red-400'
+                    : 'bg-yellow-400/20 text-yellow-300'
+                }`}
+              >
+                {h.text}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
-                            <div className="header-card text-left">
-                                <div className="text-sky-100 text-3xl font-black whitespace-nowrap mb-1">
-                                    {data?.hebrewDate || "---"}
-                                </div>
+      {/* PARASHA + PASUK */}
+      <div className="header-card flex flex-col min-w-0 flex-1 max-w-[380px] overflow-hidden">
+        <div className="text-sky-400/50 text-sm font-black mb-1">
+          פרשת
+        </div>
 
-                                {data?.omer && (
-                                    <div className="text-purple-400 text-xl font-black whitespace-nowrap mb-1">
-                                        {data.omer}
-                                    </div>
-                                )}
+        <div className="text-sky-300 text-3xl md:text-4xl font-black parasha-glow leading-none truncate">
+          {data?.parashaHeb || "---"}
+        </div>
 
-                                <div className="text-white/40 text-xl digital-font font-bold tracking-wider">
-                                    {data?.gregorianDate || "---"}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </header>
+        {randomPasuk && (
+          <div className="pasuk-ticker mt-2 text-xs md:text-sm font-bold text-white/80 w-full">
+            <div className="pasuk-track">
+              <span>
+                <span className="text-yellow-400 ml-2">
+                  {randomPasuk.hebrewRef}
+                </span>
+                <span className="mx-2">—</span>
+                <span>{randomPasuk.text}</span>
+              </span>
+
+              <span aria-hidden="true">
+                <span className="text-yellow-400 ml-2">
+                  {randomPasuk.hebrewRef}
+                </span>
+                <span className="mx-2">—</span>
+                <span>{randomPasuk.text}</span>
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+
+    </div>
+
+    {/* RIGHT SIDE */}
+    <div className="flex items-center gap-4 shrink-0">
+
+      <button
+        onClick={() => setShowSettings(true)}
+        className="text-white/20 hover:text-yellow-400 transition-all hover:rotate-90 p-2 shrink-0"
+      >
+        <i className="fa-solid fa-gear text-3xl md:text-4xl"></i>
+      </button>
+
+      {/* DAF YOMI */}
+      <div className="header-card px-4 py-3 shrink-0">
+        <div className="text-white/30 text-sm uppercase tracking-widest mb-1">
+          דף היומי
+        </div>
+        <div className="text-green-400 text-2xl md:text-3xl font-black whitespace-nowrap">
+          {data?.daf || "---"}
+        </div>
+      </div>
+
+      <div className="separator shrink-0"></div>
+
+      {/* DATE */}
+      <div className="header-card text-left shrink-0">
+        <div className="text-sky-100 text-2xl md:text-3xl font-black whitespace-nowrap mb-1">
+          {data?.hebrewDate || "---"}
+        </div>
+
+        {data?.omer && (
+          <div className="text-purple-400 text-sm md:text-xl font-black whitespace-nowrap mb-1">
+            {data.omer}
+          </div>
+        )}
+
+        <div className="text-white/40 text-sm md:text-xl digital-font font-bold tracking-wider">
+          {data?.gregorianDate || "---"}
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</header>
 
                 <main className="flex-grow flex flex-col items-center justify-center relative min-h-0">
                     {countdownData ? (
