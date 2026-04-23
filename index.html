@@ -102,7 +102,41 @@
     gap: 16px;
     align-items: stretch;
 }
+.omer-ticker {
+    width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    position: relative;
+    direction: ltr;
+    mask-image: linear-gradient(to right, transparent 0%, white 8%, white 92%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, white 8%, white 92%, transparent 100%);
+}
 
+.omer-track {
+    display: inline-flex;
+    align-items: center;
+    width: max-content;
+    white-space: nowrap;
+    will-change: transform;
+    animation: omer-marquee 12s linear infinite;
+}
+
+.omer-track:hover {
+    animation-play-state: paused;
+}
+
+.omer-item {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    padding-right: 3rem;
+    direction: rtl;
+}
+
+@keyframes omer-marquee {
+    from { transform: translateX(-50%); }
+    to   { transform: translateX(0); }
+}
         .pasuk-ticker {
             width: 100%;
             overflow: hidden;
@@ -650,11 +684,18 @@ function App() {
 							{data?.hebrewDate || "---"}
 						</div>
 
-                        {data?.omer && (
-						<div className="text-purple-400 text-base md:text-xl font-black whitespace-nowrap overflow-hidden text-ellipsis mb-1">
-							{data.omer}
-						</div>
-                        )}
+{data?.omer && (
+    <div className="omer-ticker mb-1">
+        <div className="omer-track">
+            <div className="omer-item text-purple-400 text-base md:text-xl font-black">
+                {data.omer}
+            </div>
+            <div className="omer-item text-purple-400 text-base md:text-xl font-black" aria-hidden="true">
+                {data.omer}
+            </div>
+        </div>
+    </div>
+)}
 
                         <div className="text-white/40 text-lg md:text-2xl digital-font font-bold tracking-wider">
                             {data?.gregorianDate || "---"}
