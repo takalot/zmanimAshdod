@@ -81,51 +81,36 @@
             backdrop-filter: blur(8px);
         }
 
-        .holiday-badge {
-            background: linear-gradient(90deg, rgba(251, 206, 7, 0.3), rgba(251, 206, 7, 0.05));
-            border-right: 3px solid #fbce07;
-            padding: 10px 20px;
-            border-radius: 12px;
-            box-shadow: 0 0 20px rgba(251, 206, 7, 0.3);
-        }
-
-        .fast-day-badge {
-            background: linear-gradient(90deg, rgba(239, 68, 68, 0.3), rgba(239, 68, 68, 0.05));
-            border-right: 3px solid #ef4444;
-            color: #ef4444 !important;
-            padding: 10px 20px;
-            border-radius: 12px;
-            box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
-        }
-
         .parasha-glow { text-shadow: 0 0 25px rgba(56, 189, 248, 0.6); }
-
-        .separator {
-            width: 2px;
-            height: 4rem;
-            background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.2), transparent);
-        }
 
         .header-card {
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 18px;
-            padding: 1rem 1.5rem;
+            padding: 1rem 1.25rem;
+            min-width: 0;
+            overflow: hidden;
         }
 
         .footer-gradient {
             background: linear-gradient(to top, rgba(0, 0, 0, 0.8), rgba(255, 255, 255, 0.05));
         }
 
-        /* PASUK TV TICKER */
+.header-grid {
+    display: grid;
+    grid-template-columns: 250px 320px 360px 240px minmax(520px, 1fr);
+    gap: 16px;
+    align-items: stretch;
+}
+
         .pasuk-ticker {
             width: 100%;
             overflow: hidden;
             white-space: nowrap;
             position: relative;
             margin-top: 0.75rem;
-            padding-top: 0.6rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding-top: 0.65rem;
+            border-top: 1px solid rgba(255,255,255,0.08);
             direction: ltr;
             mask-image: linear-gradient(to right, transparent 0%, white 6%, white 94%, transparent 100%);
             -webkit-mask-image: linear-gradient(to right, transparent 0%, white 6%, white 94%, transparent 100%);
@@ -154,10 +139,10 @@
 
         .pasuk-text {
             font-family: Arial, sans-serif;
-            font-size: 1.12rem;
-            line-height: 1.55;
-            font-weight: 800;
-            color: rgba(255,255,255,0.95);
+            font-size: 0.95rem;
+            line-height: 1.35;
+            font-weight: 700;
+            color: rgba(255,255,255,0.96);
         }
 
         .pasuk-ref {
@@ -168,7 +153,10 @@
 
         @keyframes pasuk-marquee {
             from { transform: translateX(-50%); }
-            to   { transform: translateX(0); }
+            to { transform: translateX(0); }
+        }
+
+
         }
     </style>
 </head>
@@ -446,7 +434,6 @@ function App() {
             ).then(r => r.json());
 
             const solar = solarRes.results;
-
             const sunrise = parseTime(solar.sunrise, civilDate);
             const sunset = parseTime(solar.sunset, civilDate);
             const dawn = parseTime(solar.dawn, civilDate);
@@ -478,7 +465,6 @@ function App() {
             setWeather(extracted);
 
             const items = dailyRes.items || [];
-
             const daf = items.find(i => i.category === 'dafyomi' && i.date === effectiveIso)?.hebrew || "---";
 
             const parashaEvent = items.find(i => i.category === 'parashat' && i.date === satIso);
@@ -628,11 +614,8 @@ function App() {
             const timeString = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 
             let colorClass = "text-green-500 glow-green";
-            if (diff <= 60000) {
-                colorClass = "text-red-600 glow-red";
-            } else if (diff <= 300000) {
-                colorClass = "text-orange-500 glow-orange";
-            }
+            if (diff <= 60000) colorClass = "text-red-600 glow-red";
+            else if (diff <= 300000) colorClass = "text-orange-500 glow-orange";
 
             return { timeString, colorClass, isProgressBar: false };
         }
@@ -640,102 +623,102 @@ function App() {
         return null;
     }, [nextZman, activeZman, now]);
 
-    if (loading) return (
-        <div className="h-screen flex items-center justify-center bg-black">
-            <div className="text-yellow-400 font-bold text-2xl animate-pulse digital-font tracking-[0.5em]">LOADING...</div>
-        </div>
-    );
+    if (loading) {
+        return (
+            <div className="h-screen flex items-center justify-center bg-black">
+                <div className="text-yellow-400 font-bold text-2xl animate-pulse digital-font tracking-[0.5em]">LOADING...</div>
+            </div>
+        );
+    }
 
     const curTime = formatTime(now);
-    const visibleZmanim = zmanim
-        .filter(z => visibleIds.includes(z.id))
-        .sort((a, b) => a.fullTime - b.fullTime);
+    const visibleZmanim = zmanim.filter(z => visibleIds.includes(z.id)).sort((a, b) => a.fullTime - b.fullTime);
 
     return (
         <div className="h-screen flex flex-col justify-between px-6 py-3 overflow-hidden bg-black text-white">
-
             <header className="w-full border-b border-white/10 pb-4 pt-3 shrink-0">
-                <div className="flex flex-row-reverse items-center justify-between gap-4 min-w-0">
+                <div className="header-grid">
+                    <div className="header-card shrink-0">
+                        <div className="text-white/30 text-base uppercase tracking-widest mb-1">דף היומי</div>
+						<div className="text-green-400 text-2xl md:text-3xl font-black whitespace-nowrap overflow-hidden text-ellipsis">
+							{data?.daf || "---"}
+						</div>
+                    </div>
 
-                    <div className="flex items-center gap-4 min-w-0 flex-1">
+                    <div className="header-card">
+						<div className="text-sky-100 text-2xl md:text-3xl font-black whitespace-nowrap overflow-hidden text-ellipsis mb-1">
+							{data?.hebrewDate || "---"}
+						</div>
 
-                        <div className="text-yellow-400 digital-font font-black text-6xl md:text-7xl leading-none shrink-0">
-                            {curTime}
+                        {data?.omer && (
+						<div className="text-purple-400 text-base md:text-xl font-black whitespace-nowrap overflow-hidden text-ellipsis mb-1">
+							{data.omer}
+						</div>
+                        )}
+
+                        <div className="text-white/40 text-lg md:text-2xl digital-font font-bold tracking-wider">
+                            {data?.gregorianDate || "---"}
+                        </div>
+                    </div>
+
+                    <div className="header-card flex items-center justify-center">
+						<div className="text-yellow-400 digital-font font-black text-5xl md:text-6xl leading-none whitespace-nowrap">
+							{curTime}
+						</div>
+                    </div>
+
+                    <div className="header-card">
+                        <div className="text-green-400 text-3xl md:text-4xl font-black leading-none mb-2 text-center">
+                            {CITIES[selectedCity].name}
                         </div>
 
-                        <div className="separator shrink-0"></div>
-						
-						                        <div className="header-card flex flex-col min-w-0 flex-1 max-w-[620px] overflow-hidden">
-                            <div className="text-sky-400/60 text-base md:text-lg font-black mb-1 uppercase tracking-wider">
-                                פרשת השבוע
-                            </div>
-
-                            <div className="text-sky-300 text-4xl md:text-5xl font-black parasha-glow leading-none truncate">
-                                {data?.parashaHeb || "---"}
-                            </div>
-
-                            {randomPasuk && (
-                                <div className="pasuk-ticker" title={`${randomPasuk.hebrewRef} — ${randomPasuk.text}`}>
-                                    <div className="pasuk-track">
-                                        <div className="pasuk-item pasuk-text">
-                                            <span className="pasuk-ref">{randomPasuk.hebrewRef}</span>
-                                            <span>—</span>
-                                            <span className="mr-2">{randomPasuk.text}</span>
-                                        </div>
-
-                                        <div className="pasuk-item pasuk-text" aria-hidden="true">
-                                            <span className="pasuk-ref">{randomPasuk.hebrewRef}</span>
-                                            <span>—</span>
-                                            <span className="mr-2">{randomPasuk.text}</span>
-                                        </div>
+                        {weather?.weather7h && weather?.weather12h && (
+                            <div className="flex gap-3 items-center justify-center">
+                                <div className="text-center">
+                                    <div className="text-cyan-400 text-3xl md:text-4xl font-black">
+                                        {weather.weather7h.temp}°
+                                    </div>
+                                    <div className="text-cyan-300/60 text-sm md:text-base font-bold">
+                                        {getWeatherDesc(weather.weather7h.code)}
                                     </div>
                                 </div>
-                            )}
-                        </div>
 
-                        <div className="header-card shrink-0">
-                            <div className="text-green-400 text-3xl md:text-4xl font-black leading-none mb-2">
-                                {CITIES[selectedCity].name}
-                            </div>
+                                <div className="text-white/20 text-lg">/</div>
 
-                            {weather?.weather7h && weather?.weather12h && (
-                                <div className="flex gap-3 items-center justify-center">
-                                    <div className="text-center">
-                                        <div className="text-cyan-400 text-3xl md:text-4xl font-black">
-                                            {weather.weather7h.temp}°
-                                        </div>
-                                        <div className="text-cyan-300/60 text-sm md:text-base font-bold">
-                                            {getWeatherDesc(weather.weather7h.code)}
-                                        </div>
+                                <div className="text-center">
+                                    <div className="text-orange-400 text-3xl md:text-4xl font-black">
+                                        {weather.weather12h.temp}°
                                     </div>
-
-                                    <div className="text-white/20 text-lg">/</div>
-
-                                    <div className="text-center">
-                                        <div className="text-orange-400 text-3xl md:text-4xl font-black">
-                                            {weather.weather12h.temp}°
-                                        </div>
-                                        <div className="text-orange-300/60 text-sm md:text-base font-bold">
-                                            {getWeatherDesc(weather.weather12h.code)}
-                                        </div>
+                                    <div className="text-orange-300/60 text-sm md:text-base font-bold">
+                                        {getWeatherDesc(weather.weather12h.code)}
                                     </div>
                                 </div>
-                            )}
-                        </div>
+                            </div>
+                        )}
+                    </div>
 
-                        <div className="separator shrink-0"></div>
+                    <div className="header-card">
+                        <div className="flex items-start justify-between gap-4">
+                            <div className="min-w-0 flex-1">
+                                <div className="text-blue-400 text-3xl md:text-4xl font-black leading-none mb-2 truncate">
+                                    {HEBREW_DAYS[now.getDay()]}
+                                </div>
 
-                        <div className="header-card flex flex-col items-center shrink-0 min-w-[180px]">
-                            <div className="text-blue-400 text-4xl md:text-5xl font-black leading-none">
-                                {HEBREW_DAYS[now.getDay()]}
+                                <div className="text-sky-400/60 text-sm md:text-base font-black mb-1">
+                                    פרשת השבוע
+                                </div>
+
+                                <div className="text-sky-300 text-3xl md:text-4xl font-black parasha-glow leading-none truncate">
+                                    {data?.parashaHeb || "---"}
+                                </div>
                             </div>
 
                             {data?.holidays?.length > 0 && (
-                                <div className="mt-2 flex flex-col items-center gap-1">
+                                <div className="flex flex-col items-end gap-1 shrink-0">
                                     {data.holidays.map((h, i) => (
                                         <div
                                             key={i}
-                                            className={`text-sm md:text-base font-black px-3 py-1 rounded-full whitespace-nowrap ${
+                                            className={`text-sm font-black px-3 py-1 rounded-full whitespace-nowrap ${
                                                 h.isFast
                                                     ? 'bg-red-500/20 text-red-400'
                                                     : 'bg-yellow-400/20 text-yellow-300'
@@ -748,43 +731,23 @@ function App() {
                             )}
                         </div>
 
-                    </div>
+                        {randomPasuk && (
+                            <div className="pasuk-ticker" title={`${randomPasuk.hebrewRef} — ${randomPasuk.text}`}>
+                                <div className="pasuk-track">
+                                    <div className="pasuk-item pasuk-text">
+                                        <span className="pasuk-ref">{randomPasuk.hebrewRef}</span>
+                                        <span>—</span>
+                                        <span className="mr-2">{randomPasuk.text}</span>
+                                    </div>
 
-                    <div className="flex items-center gap-4 shrink-0">
-
-                        <button
-                            onClick={() => setShowSettings(true)}
-                            className="text-white/20 hover:text-yellow-400 transition-all hover:rotate-90 p-2 shrink-0"
-                        >
-                            <i className="fa-solid fa-gear text-4xl md:text-5xl"></i>
-                        </button>
-
-                        <div className="header-card px-4 py-3 shrink-0">
-                            <div className="text-white/30 text-base uppercase tracking-widest mb-1">
-                                דף היומי
-                            </div>
-                            <div className="text-green-400 text-3xl md:text-4xl font-black whitespace-nowrap">
-                                {data?.daf || "---"}
-                            </div>
-                        </div>
-
-                        <div className="separator shrink-0"></div>
-
-                        <div className="header-card text-left shrink-0">
-                            <div className="text-sky-100 text-3xl md:text-4xl font-black whitespace-nowrap mb-1">
-                                {data?.hebrewDate || "---"}
-                            </div>
-
-                            {data?.omer && (
-                                <div className="text-purple-400 text-lg md:text-2xl font-black whitespace-nowrap mb-1">
-                                    {data.omer}
+                                    <div className="pasuk-item pasuk-text" aria-hidden="true">
+                                        <span className="pasuk-ref">{randomPasuk.hebrewRef}</span>
+                                        <span>—</span>
+                                        <span className="mr-2">{randomPasuk.text}</span>
+                                    </div>
                                 </div>
-                            )}
-
-                            <div className="text-white/40 text-lg md:text-2xl digital-font font-bold tracking-wider">
-                                {data?.gregorianDate || "---"}
                             </div>
-                        </div>
+                        )}
                     </div>
                 </div>
             </header>
@@ -822,12 +785,20 @@ function App() {
                     <div className="text-center">
                         {nextZman && (
                             <div className="mb-8 md:mb-16">
-                                <div className="text-white/20 uppercase tracking-[0.5em] text-[10px] md:text-xs font-bold mb-3">Prochain horaire</div>
-                                <div className="text-6xl md:text-9xl font-black text-white glow-text">{nextZman.label}</div>
-                                <div className="text-3xl md:text-5xl text-yellow-400 mt-2 md:mt-4 digital-font font-black">{nextZman.time.slice(0, 5)}</div>
+                                <div className="text-white/20 uppercase tracking-[0.5em] text-[10px] md:text-xs font-bold mb-3">
+                                    Prochain horaire
+                                </div>
+                                <div className="text-6xl md:text-9xl font-black text-white glow-text">
+                                    {nextZman.label}
+                                </div>
+                                <div className="text-3xl md:text-5xl text-yellow-400 mt-2 md:mt-4 digital-font font-black">
+                                    {nextZman.time.slice(0, 5)}
+                                </div>
                             </div>
                         )}
-                        <div className="text-yellow-400/20 text-[10px] md:text-sm font-bold tracking-[1em] mb-4 uppercase">Horloge Actuelle</div>
+                        <div className="text-yellow-400/20 text-[10px] md:text-sm font-bold tracking-[1em] mb-4 uppercase">
+                            Horloge Actuelle
+                        </div>
                         <h1 className="text-[9rem] md:text-[17rem] leading-none font-black digital-font text-white glow-text tracking-tighter">
                             {curTime.slice(0, 5)}
                         </h1>
