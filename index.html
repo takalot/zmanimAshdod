@@ -742,12 +742,9 @@ function App() {
                         <div className="flex items-start justify-between gap-4">
                             <div className="min-w-0 flex-1">
                                 <div className="text-blue-400 text-3xl md:text-4xl font-black leading-none mb-2 truncate">
-                                    {HEBREW_DAYS[now.getDay()]}
+                                    {HEBREW_DAYS[now.getDay()]} -  {data?.parashaHeb || "---"}
                                 </div>
-
-                                <div className="text-sky-300 text-3xl md:text-4xl font-black parasha-glow leading-none truncate">
-                                    {data?.parashaHeb || "---"}
-                                </div>
+                            </div>
                             </div>
 
                             {data?.holidays?.length > 0 && (
