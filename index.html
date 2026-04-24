@@ -13,6 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 
     <style>
+        /* ─── Base ─────────────────────────────────────────────── */
         body {
             background-color: #000000;
             color: #ffffff;
@@ -24,6 +25,24 @@
 
         .digital-font { font-family: 'JetBrains Mono', monospace; }
 
+        /* ─── Header layout ─────────────────────────────────────── */
+        .header-grid {
+            display: grid;
+            grid-template-columns: 250px 320px 360px 240px minmax(520px, 1fr);
+            gap: 16px;
+            align-items: stretch;
+        }
+
+        .header-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 18px;
+            padding: 1rem 1.25rem;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        /* ─── Zman cards ────────────────────────────────────────── */
         .zman-card {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -55,88 +74,78 @@
             animation: bounce 2s infinite;
         }
 
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-4px); }
+        /* ─── Footer ────────────────────────────────────────────── */
+        .footer-gradient {
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.8), rgba(255, 255, 255, 0.05));
         }
 
-        .glow-text { text-shadow: 0 0 30px rgba(251, 206, 7, 0.5); }
-        .glow-red { text-shadow: 0 0 60px rgba(239, 68, 68, 1); }
-        .glow-orange { text-shadow: 0 0 60px rgba(249, 115, 22, 1); }
-        .glow-green { text-shadow: 0 0 60px rgba(34, 197, 94, 1); }
-        .glow-blue { text-shadow: 0 0 60px rgba(59, 130, 246, 1); }
-
-        @keyframes progress-bar {
-            0% { width: 0%; }
-            100% { width: 100%; }
-        }
-
-        .progress-animation { animation: progress-bar 30s linear; }
-
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
+        /* ─── Modal ─────────────────────────────────────────────── */
         .modal-overlay {
             background: rgba(0, 0, 0, 0.9);
             backdrop-filter: blur(8px);
         }
 
+        /* ─── Glow effects ──────────────────────────────────────── */
+        .glow-text    { text-shadow: 0 0 30px rgba(251, 206, 7, 0.5); }
+        .glow-red     { text-shadow: 0 0 60px rgba(239, 68, 68, 1); }
+        .glow-orange  { text-shadow: 0 0 60px rgba(249, 115, 22, 1); }
+        .glow-green   { text-shadow: 0 0 60px rgba(34, 197, 94, 1); }
+        .glow-blue    { text-shadow: 0 0 60px rgba(59, 130, 246, 1); }
         .parasha-glow { text-shadow: 0 0 25px rgba(56, 189, 248, 0.6); }
 
-        .header-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 18px;
-            padding: 1rem 1.25rem;
-            min-width: 0;
+        /* ─── Scrollbar ─────────────────────────────────────────── */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* ─── Animations ────────────────────────────────────────── */
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50%       { transform: translateY(-4px); }
+        }
+
+        @keyframes progress-bar {
+            0%   { width: 0%; }
+            100% { width: 100%; }
+        }
+
+        .progress-animation { animation: progress-bar 30s linear; }
+
+        /* ─── Omer ticker ───────────────────────────────────────── */
+        .omer-ticker {
+            width: 100%;
             overflow: hidden;
+            white-space: nowrap;
+            position: relative;
+            direction: ltr;
+            mask-image: linear-gradient(to right, transparent 0%, white 8%, white 92%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to right, transparent 0%, white 8%, white 92%, transparent 100%);
         }
 
-        .footer-gradient {
-            background: linear-gradient(to top, rgba(0, 0, 0, 0.8), rgba(255, 255, 255, 0.05));
+        .omer-track {
+            display: inline-flex;
+            align-items: center;
+            width: max-content;
+            white-space: nowrap;
+            will-change: transform;
+            animation: omer-marquee 12s linear infinite;
         }
 
-.header-grid {
-    display: grid;
-    grid-template-columns: 250px 320px 360px 240px minmax(520px, 1fr);
-    gap: 16px;
-    align-items: stretch;
-}
-.omer-ticker {
-    width: 100%;
-    overflow: hidden;
-    white-space: nowrap;
-    position: relative;
-    direction: ltr;
-    mask-image: linear-gradient(to right, transparent 0%, white 8%, white 92%, transparent 100%);
-    -webkit-mask-image: linear-gradient(to right, transparent 0%, white 8%, white 92%, transparent 100%);
-}
+        .omer-track:hover { animation-play-state: paused; }
 
-.omer-track {
-    display: inline-flex;
-    align-items: center;
-    width: max-content;
-    white-space: nowrap;
-    will-change: transform;
-    animation: omer-marquee 12s linear infinite;
-}
+        .omer-item {
+            display: inline-flex;
+            align-items: center;
+            flex-shrink: 0;
+            padding-right: 3rem;
+            direction: rtl;
+        }
 
-.omer-track:hover {
-    animation-play-state: paused;
-}
+        @keyframes omer-marquee {
+            from { transform: translateX(-50%); }
+            to   { transform: translateX(0); }
+        }
 
-.omer-item {
-    display: inline-flex;
-    align-items: center;
-    flex-shrink: 0;
-    padding-right: 3rem;
-    direction: rtl;
-}
-
-@keyframes omer-marquee {
-    from { transform: translateX(-50%); }
-    to   { transform: translateX(0); }
-}
+        /* ─── Pasuk ticker ──────────────────────────────────────── */
         .pasuk-ticker {
             width: 100%;
             overflow: hidden;
@@ -144,7 +153,7 @@
             position: relative;
             margin-top: 0.75rem;
             padding-top: 0.65rem;
-            border-top: 1px solid rgba(255,255,255,0.08);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
             direction: ltr;
             mask-image: linear-gradient(to right, transparent 0%, white 6%, white 94%, transparent 100%);
             -webkit-mask-image: linear-gradient(to right, transparent 0%, white 6%, white 94%, transparent 100%);
@@ -159,9 +168,7 @@
             animation: pasuk-marquee 8s linear infinite;
         }
 
-        .pasuk-track:hover {
-            animation-play-state: paused;
-        }
+        .pasuk-track:hover { animation-play-state: paused; }
 
         .pasuk-item {
             display: inline-flex;
@@ -176,7 +183,7 @@
             font-size: 0.95rem;
             line-height: 1.35;
             font-weight: 700;
-            color: rgba(255,255,255,0.96);
+            color: rgba(255, 255, 255, 0.96);
         }
 
         .pasuk-ref {
@@ -187,10 +194,7 @@
 
         @keyframes pasuk-marquee {
             from { transform: translateX(-50%); }
-            to { transform: translateX(0); }
-        }
-
-
+            to   { transform: translateX(0); }
         }
     </style>
 </head>
@@ -200,90 +204,102 @@
 <script type="text/babel">
 const { useState, useEffect, useMemo, useCallback } = React;
 
+/* ─────────────────────────────────────────────────────────────────
+   CONSTANTS
+───────────────────────────────────────────────────────────────── */
+
 const CITIES = {
-    ashdod: { name: 'אשדוד', lat: 31.8044, lng: 34.6553 },
-    jerusalem: { name: 'ירושלים', lat: 31.7683, lng: 35.2137 },
-    telaviv: { name: 'תל אביב', lat: 32.0853, lng: 34.7818 },
-    haifa: { name: 'חיפה', lat: 32.7940, lng: 34.9896 },
-    beersheva: { name: 'באר שבע', lat: 31.2518, lng: 34.7913 },
-    netanya: { name: 'נתניה', lat: 32.3215, lng: 34.8532 },
-    bneibraq: { name: 'בני ברק', lat: 32.0809, lng: 34.8338 },
-    petahtikva: { name: 'פתח תקווה', lat: 32.0879, lng: 34.8878 },
-    paris: { name: 'פריז', lat: 48.8570, lng: 2.3524 },
-    dublin: { name: 'דבלין', lat: 53.3493, lng: -6.2605 },
-    new_york: { name: 'ניו-יורק', lat: 40.5799, lng: -74.5321 },
-    sidney: { name: 'סידני', lat: -33.92564, lng: 150.5663 },
-    tokyo: { name: 'טוקיו', lat: 35.6768, lng: 139.7638 }
+    ashdod:     { name: 'אשדוד',      lat: 31.8044,   lng: 34.6553  },
+    jerusalem:  { name: 'ירושלים',    lat: 31.7683,   lng: 35.2137  },
+    telaviv:    { name: 'תל אביב',    lat: 32.0853,   lng: 34.7818  },
+    haifa:      { name: 'חיפה',        lat: 32.7940,   lng: 34.9896  },
+    beersheva:  { name: 'באר שבע',    lat: 31.2518,   lng: 34.7913  },
+    netanya:    { name: 'נתניה',      lat: 32.3215,   lng: 34.8532  },
+    bneibraq:   { name: 'בני ברק',    lat: 32.0809,   lng: 34.8338  },
+    petahtikva: { name: 'פתח תקווה',  lat: 32.0879,   lng: 34.8878  },
+    paris:      { name: 'פריז',        lat: 48.8570,   lng: 2.3524   },
+    dublin:     { name: 'דבלין',      lat: 53.3493,   lng: -6.2605  },
+    new_york:   { name: 'ניו-יורק',   lat: 40.5799,   lng: -74.5321 },
+    sidney:     { name: 'סידני',      lat: -33.92564, lng: 150.5663 },
+    tokyo:      { name: 'טוקיו',      lat: 35.6768,   lng: 139.7638 }
 };
 
-const HEBREW_DAYS = ["יום ראשון", "יום שני", "יום שלישי", "יום רביעי", "יום חמישי", "יום שישי", "שבת"];
+const HEBREW_DAYS = [
+    "יום ראשון", "יום שני", "יום שלישי", "יום רביעי",
+    "יום חמישי", "יום שישי", "שבת"
+];
 
 const PARASHA_RANGES = {
-    "Parashat Bereshit": { book: "Genesis", hebrewBook: "בראשית", startChapter: 1, startVerse: 1, endChapter: 6, endVerse: 8 },
-    "Parashat Noach": { book: "Genesis", hebrewBook: "בראשית", startChapter: 6, startVerse: 9, endChapter: 11, endVerse: 32 },
-    "Parashat Lech-Lecha": { book: "Genesis", hebrewBook: "בראשית", startChapter: 12, startVerse: 1, endChapter: 17, endVerse: 27 },
-    "Parashat Vayera": { book: "Genesis", hebrewBook: "בראשית", startChapter: 18, startVerse: 1, endChapter: 22, endVerse: 24 },
-    "Parashat Chayei Sara": { book: "Genesis", hebrewBook: "בראשית", startChapter: 23, startVerse: 1, endChapter: 25, endVerse: 18 },
-    "Parashat Toldot": { book: "Genesis", hebrewBook: "בראשית", startChapter: 25, startVerse: 19, endChapter: 28, endVerse: 9 },
-    "Parashat Vayetzei": { book: "Genesis", hebrewBook: "בראשית", startChapter: 28, startVerse: 10, endChapter: 32, endVerse: 3 },
-    "Parashat Vayishlach": { book: "Genesis", hebrewBook: "בראשית", startChapter: 32, startVerse: 4, endChapter: 36, endVerse: 43 },
-    "Parashat Vayeshev": { book: "Genesis", hebrewBook: "בראשית", startChapter: 37, startVerse: 1, endChapter: 40, endVerse: 23 },
-    "Parashat Miketz": { book: "Genesis", hebrewBook: "בראשית", startChapter: 41, startVerse: 1, endChapter: 44, endVerse: 17 },
-    "Parashat Vayigash": { book: "Genesis", hebrewBook: "בראשית", startChapter: 44, startVerse: 18, endChapter: 47, endVerse: 27 },
-    "Parashat Vayechi": { book: "Genesis", hebrewBook: "בראשית", startChapter: 47, startVerse: 28, endChapter: 50, endVerse: 26 },
-
-    "Parashat Shemot": { book: "Exodus", hebrewBook: "שמות", startChapter: 1, startVerse: 1, endChapter: 6, endVerse: 1 },
-    "Parashat Vaera": { book: "Exodus", hebrewBook: "שמות", startChapter: 6, startVerse: 2, endChapter: 9, endVerse: 35 },
-    "Parashat Bo": { book: "Exodus", hebrewBook: "שמות", startChapter: 10, startVerse: 1, endChapter: 13, endVerse: 16 },
-    "Parashat Beshalach": { book: "Exodus", hebrewBook: "שמות", startChapter: 13, startVerse: 17, endChapter: 17, endVerse: 16 },
-    "Parashat Yitro": { book: "Exodus", hebrewBook: "שמות", startChapter: 18, startVerse: 1, endChapter: 20, endVerse: 23 },
-    "Parashat Mishpatim": { book: "Exodus", hebrewBook: "שמות", startChapter: 21, startVerse: 1, endChapter: 24, endVerse: 18 },
-    "Parashat Terumah": { book: "Exodus", hebrewBook: "שמות", startChapter: 25, startVerse: 1, endChapter: 27, endVerse: 19 },
-    "Parashat Tetzaveh": { book: "Exodus", hebrewBook: "שמות", startChapter: 27, startVerse: 20, endChapter: 30, endVerse: 10 },
-    "Parashat Ki Tisa": { book: "Exodus", hebrewBook: "שמות", startChapter: 30, startVerse: 11, endChapter: 34, endVerse: 35 },
-    "Parashat Vayakhel": { book: "Exodus", hebrewBook: "שמות", startChapter: 35, startVerse: 1, endChapter: 38, endVerse: 20 },
-    "Parashat Pekudei": { book: "Exodus", hebrewBook: "שמות", startChapter: 38, startVerse: 21, endChapter: 40, endVerse: 38 },
-    "Parashat Vayakhel-Pekudei": { book: "Exodus", hebrewBook: "שמות", startChapter: 35, startVerse: 1, endChapter: 40, endVerse: 38 },
-
-    "Parashat Vayikra": { book: "Leviticus", hebrewBook: "ויקרא", startChapter: 1, startVerse: 1, endChapter: 5, endVerse: 26 },
-    "Parashat Tzav": { book: "Leviticus", hebrewBook: "ויקרא", startChapter: 6, startVerse: 1, endChapter: 8, endVerse: 36 },
-    "Parashat Shmini": { book: "Leviticus", hebrewBook: "ויקרא", startChapter: 9, startVerse: 1, endChapter: 11, endVerse: 47 },
-    "Parashat Tazria": { book: "Leviticus", hebrewBook: "ויקרא", startChapter: 12, startVerse: 1, endChapter: 13, endVerse: 59 },
-    "Parashat Metzora": { book: "Leviticus", hebrewBook: "ויקרא", startChapter: 14, startVerse: 1, endChapter: 15, endVerse: 33 },
-    "Parashat Tazria-Metzora": { book: "Leviticus", hebrewBook: "ויקרא", startChapter: 12, startVerse: 1, endChapter: 15, endVerse: 33 },
-    "Parashat Achrei Mot": { book: "Leviticus", hebrewBook: "ויקרא", startChapter: 16, startVerse: 1, endChapter: 18, endVerse: 30 },
-    "Parashat Kedoshim": { book: "Leviticus", hebrewBook: "ויקרא", startChapter: 19, startVerse: 1, endChapter: 20, endVerse: 27 },
-    "Parashat Achrei Mot-Kedoshim": { book: "Leviticus", hebrewBook: "ויקרא", startChapter: 16, startVerse: 1, endChapter: 20, endVerse: 27 },
-    "Parashat Emor": { book: "Leviticus", hebrewBook: "ויקרא", startChapter: 21, startVerse: 1, endChapter: 24, endVerse: 23 },
-    "Parashat Behar": { book: "Leviticus", hebrewBook: "ויקרא", startChapter: 25, startVerse: 1, endChapter: 26, endVerse: 2 },
-    "Parashat Bechukotai": { book: "Leviticus", hebrewBook: "ויקרא", startChapter: 26, startVerse: 3, endChapter: 27, endVerse: 34 },
-    "Parashat Behar-Bechukotai": { book: "Leviticus", hebrewBook: "ויקרא", startChapter: 25, startVerse: 1, endChapter: 27, endVerse: 34 },
-
-    "Parashat Bamidbar": { book: "Numbers", hebrewBook: "במדבר", startChapter: 1, startVerse: 1, endChapter: 4, endVerse: 20 },
-    "Parashat Nasso": { book: "Numbers", hebrewBook: "במדבר", startChapter: 4, startVerse: 21, endChapter: 7, endVerse: 89 },
-    "Parashat Beha'alotcha": { book: "Numbers", hebrewBook: "במדבר", startChapter: 8, startVerse: 1, endChapter: 12, endVerse: 16 },
-    "Parashat Sh'lach": { book: "Numbers", hebrewBook: "במדבר", startChapter: 13, startVerse: 1, endChapter: 15, endVerse: 41 },
-    "Parashat Korach": { book: "Numbers", hebrewBook: "במדבר", startChapter: 16, startVerse: 1, endChapter: 18, endVerse: 32 },
-    "Parashat Chukat": { book: "Numbers", hebrewBook: "במדבר", startChapter: 19, startVerse: 1, endChapter: 22, endVerse: 1 },
-    "Parashat Balak": { book: "Numbers", hebrewBook: "במדבר", startChapter: 22, startVerse: 2, endChapter: 25, endVerse: 9 },
-    "Parashat Chukat-Balak": { book: "Numbers", hebrewBook: "במדבר", startChapter: 19, startVerse: 1, endChapter: 25, endVerse: 9 },
-    "Parashat Pinchas": { book: "Numbers", hebrewBook: "במדבר", startChapter: 25, startVerse: 10, endChapter: 30, endVerse: 1 },
-    "Parashat Matot": { book: "Numbers", hebrewBook: "במדבר", startChapter: 30, startVerse: 2, endChapter: 32, endVerse: 42 },
-    "Parashat Masei": { book: "Numbers", hebrewBook: "במדבר", startChapter: 33, startVerse: 1, endChapter: 36, endVerse: 13 },
-    "Parashat Matot-Masei": { book: "Numbers", hebrewBook: "במדבר", startChapter: 30, startVerse: 2, endChapter: 36, endVerse: 13 },
-
-    "Parashat Devarim": { book: "Deuteronomy", hebrewBook: "דברים", startChapter: 1, startVerse: 1, endChapter: 3, endVerse: 22 },
-    "Parashat Vaetchanan": { book: "Deuteronomy", hebrewBook: "דברים", startChapter: 3, startVerse: 23, endChapter: 7, endVerse: 11 },
-    "Parashat Eikev": { book: "Deuteronomy", hebrewBook: "דברים", startChapter: 7, startVerse: 12, endChapter: 11, endVerse: 25 },
-    "Parashat Re'eh": { book: "Deuteronomy", hebrewBook: "דברים", startChapter: 11, startVerse: 26, endChapter: 16, endVerse: 17 },
-    "Parashat Shoftim": { book: "Deuteronomy", hebrewBook: "דברים", startChapter: 16, startVerse: 18, endChapter: 21, endVerse: 9 },
-    "Parashat Ki Teitzei": { book: "Deuteronomy", hebrewBook: "דברים", startChapter: 21, startVerse: 10, endChapter: 25, endVerse: 19 },
-    "Parashat Ki Tavo": { book: "Deuteronomy", hebrewBook: "דברים", startChapter: 26, startVerse: 1, endChapter: 29, endVerse: 8 },
-    "Parashat Nitzavim": { book: "Deuteronomy", hebrewBook: "דברים", startChapter: 29, startVerse: 9, endChapter: 30, endVerse: 20 },
-    "Parashat Vayeilech": { book: "Deuteronomy", hebrewBook: "דברים", startChapter: 31, startVerse: 1, endChapter: 31, endVerse: 30 },
-    "Parashat Nitzavim-Vayeilech": { book: "Deuteronomy", hebrewBook: "דברים", startChapter: 29, startVerse: 9, endChapter: 31, endVerse: 30 },
-    "Parashat Ha'azinu": { book: "Deuteronomy", hebrewBook: "דברים", startChapter: 32, startVerse: 1, endChapter: 32, endVerse: 52 }
+    // בראשית
+    "Parashat Bereshit":         { book: "Genesis",      hebrewBook: "בראשית", startChapter: 1,  startVerse: 1,  endChapter: 6,  endVerse: 8  },
+    "Parashat Noach":            { book: "Genesis",      hebrewBook: "בראשית", startChapter: 6,  startVerse: 9,  endChapter: 11, endVerse: 32 },
+    "Parashat Lech-Lecha":       { book: "Genesis",      hebrewBook: "בראשית", startChapter: 12, startVerse: 1,  endChapter: 17, endVerse: 27 },
+    "Parashat Vayera":           { book: "Genesis",      hebrewBook: "בראשית", startChapter: 18, startVerse: 1,  endChapter: 22, endVerse: 24 },
+    "Parashat Chayei Sara":      { book: "Genesis",      hebrewBook: "בראשית", startChapter: 23, startVerse: 1,  endChapter: 25, endVerse: 18 },
+    "Parashat Toldot":           { book: "Genesis",      hebrewBook: "בראשית", startChapter: 25, startVerse: 19, endChapter: 28, endVerse: 9  },
+    "Parashat Vayetzei":         { book: "Genesis",      hebrewBook: "בראשית", startChapter: 28, startVerse: 10, endChapter: 32, endVerse: 3  },
+    "Parashat Vayishlach":       { book: "Genesis",      hebrewBook: "בראשית", startChapter: 32, startVerse: 4,  endChapter: 36, endVerse: 43 },
+    "Parashat Vayeshev":         { book: "Genesis",      hebrewBook: "בראשית", startChapter: 37, startVerse: 1,  endChapter: 40, endVerse: 23 },
+    "Parashat Miketz":           { book: "Genesis",      hebrewBook: "בראשית", startChapter: 41, startVerse: 1,  endChapter: 44, endVerse: 17 },
+    "Parashat Vayigash":         { book: "Genesis",      hebrewBook: "בראשית", startChapter: 44, startVerse: 18, endChapter: 47, endVerse: 27 },
+    "Parashat Vayechi":          { book: "Genesis",      hebrewBook: "בראשית", startChapter: 47, startVerse: 28, endChapter: 50, endVerse: 26 },
+    // שמות
+    "Parashat Shemot":           { book: "Exodus",       hebrewBook: "שמות",   startChapter: 1,  startVerse: 1,  endChapter: 6,  endVerse: 1  },
+    "Parashat Vaera":            { book: "Exodus",       hebrewBook: "שמות",   startChapter: 6,  startVerse: 2,  endChapter: 9,  endVerse: 35 },
+    "Parashat Bo":               { book: "Exodus",       hebrewBook: "שמות",   startChapter: 10, startVerse: 1,  endChapter: 13, endVerse: 16 },
+    "Parashat Beshalach":        { book: "Exodus",       hebrewBook: "שמות",   startChapter: 13, startVerse: 17, endChapter: 17, endVerse: 16 },
+    "Parashat Yitro":            { book: "Exodus",       hebrewBook: "שמות",   startChapter: 18, startVerse: 1,  endChapter: 20, endVerse: 23 },
+    "Parashat Mishpatim":        { book: "Exodus",       hebrewBook: "שמות",   startChapter: 21, startVerse: 1,  endChapter: 24, endVerse: 18 },
+    "Parashat Terumah":          { book: "Exodus",       hebrewBook: "שמות",   startChapter: 25, startVerse: 1,  endChapter: 27, endVerse: 19 },
+    "Parashat Tetzaveh":         { book: "Exodus",       hebrewBook: "שמות",   startChapter: 27, startVerse: 20, endChapter: 30, endVerse: 10 },
+    "Parashat Ki Tisa":          { book: "Exodus",       hebrewBook: "שמות",   startChapter: 30, startVerse: 11, endChapter: 34, endVerse: 35 },
+    "Parashat Vayakhel":         { book: "Exodus",       hebrewBook: "שמות",   startChapter: 35, startVerse: 1,  endChapter: 38, endVerse: 20 },
+    "Parashat Pekudei":          { book: "Exodus",       hebrewBook: "שמות",   startChapter: 38, startVerse: 21, endChapter: 40, endVerse: 38 },
+    "Parashat Vayakhel-Pekudei": { book: "Exodus",       hebrewBook: "שמות",   startChapter: 35, startVerse: 1,  endChapter: 40, endVerse: 38 },
+    // ויקרא
+    "Parashat Vayikra":          { book: "Leviticus",    hebrewBook: "ויקרא",  startChapter: 1,  startVerse: 1,  endChapter: 5,  endVerse: 26 },
+    "Parashat Tzav":             { book: "Leviticus",    hebrewBook: "ויקרא",  startChapter: 6,  startVerse: 1,  endChapter: 8,  endVerse: 36 },
+    "Parashat Shmini":           { book: "Leviticus",    hebrewBook: "ויקרא",  startChapter: 9,  startVerse: 1,  endChapter: 11, endVerse: 47 },
+    "Parashat Tazria":           { book: "Leviticus",    hebrewBook: "ויקרא",  startChapter: 12, startVerse: 1,  endChapter: 13, endVerse: 59 },
+    "Parashat Metzora":          { book: "Leviticus",    hebrewBook: "ויקרא",  startChapter: 14, startVerse: 1,  endChapter: 15, endVerse: 33 },
+    "Parashat Tazria-Metzora":   { book: "Leviticus",    hebrewBook: "ויקרא",  startChapter: 12, startVerse: 1,  endChapter: 15, endVerse: 33 },
+    "Parashat Achrei Mot":       { book: "Leviticus",    hebrewBook: "ויקרא",  startChapter: 16, startVerse: 1,  endChapter: 18, endVerse: 30 },
+    "Parashat Kedoshim":         { book: "Leviticus",    hebrewBook: "ויקרא",  startChapter: 19, startVerse: 1,  endChapter: 20, endVerse: 27 },
+    "Parashat Achrei Mot-Kedoshim": { book: "Leviticus", hebrewBook: "ויקרא",  startChapter: 16, startVerse: 1,  endChapter: 20, endVerse: 27 },
+    "Parashat Emor":             { book: "Leviticus",    hebrewBook: "ויקרא",  startChapter: 21, startVerse: 1,  endChapter: 24, endVerse: 23 },
+    "Parashat Behar":            { book: "Leviticus",    hebrewBook: "ויקרא",  startChapter: 25, startVerse: 1,  endChapter: 26, endVerse: 2  },
+    "Parashat Bechukotai":       { book: "Leviticus",    hebrewBook: "ויקרא",  startChapter: 26, startVerse: 3,  endChapter: 27, endVerse: 34 },
+    "Parashat Behar-Bechukotai": { book: "Leviticus",    hebrewBook: "ויקרא",  startChapter: 25, startVerse: 1,  endChapter: 27, endVerse: 34 },
+    // במדבר
+    "Parashat Bamidbar":         { book: "Numbers",      hebrewBook: "במדבר",  startChapter: 1,  startVerse: 1,  endChapter: 4,  endVerse: 20 },
+    "Parashat Nasso":            { book: "Numbers",      hebrewBook: "במדבר",  startChapter: 4,  startVerse: 21, endChapter: 7,  endVerse: 89 },
+    "Parashat Beha'alotcha":     { book: "Numbers",      hebrewBook: "במדבר",  startChapter: 8,  startVerse: 1,  endChapter: 12, endVerse: 16 },
+    "Parashat Sh'lach":          { book: "Numbers",      hebrewBook: "במדבר",  startChapter: 13, startVerse: 1,  endChapter: 15, endVerse: 41 },
+    "Parashat Korach":           { book: "Numbers",      hebrewBook: "במדבר",  startChapter: 16, startVerse: 1,  endChapter: 18, endVerse: 32 },
+    "Parashat Chukat":           { book: "Numbers",      hebrewBook: "במדבר",  startChapter: 19, startVerse: 1,  endChapter: 22, endVerse: 1  },
+    "Parashat Balak":            { book: "Numbers",      hebrewBook: "במדבר",  startChapter: 22, startVerse: 2,  endChapter: 25, endVerse: 9  },
+    "Parashat Chukat-Balak":     { book: "Numbers",      hebrewBook: "במדבר",  startChapter: 19, startVerse: 1,  endChapter: 25, endVerse: 9  },
+    "Parashat Pinchas":          { book: "Numbers",      hebrewBook: "במדבר",  startChapter: 25, startVerse: 10, endChapter: 30, endVerse: 1  },
+    "Parashat Matot":            { book: "Numbers",      hebrewBook: "במדבר",  startChapter: 30, startVerse: 2,  endChapter: 32, endVerse: 42 },
+    "Parashat Masei":            { book: "Numbers",      hebrewBook: "במדבר",  startChapter: 33, startVerse: 1,  endChapter: 36, endVerse: 13 },
+    "Parashat Matot-Masei":      { book: "Numbers",      hebrewBook: "במדבר",  startChapter: 30, startVerse: 2,  endChapter: 36, endVerse: 13 },
+    // דברים
+    "Parashat Devarim":          { book: "Deuteronomy",  hebrewBook: "דברים",  startChapter: 1,  startVerse: 1,  endChapter: 3,  endVerse: 22 },
+    "Parashat Vaetchanan":       { book: "Deuteronomy",  hebrewBook: "דברים",  startChapter: 3,  startVerse: 23, endChapter: 7,  endVerse: 11 },
+    "Parashat Eikev":            { book: "Deuteronomy",  hebrewBook: "דברים",  startChapter: 7,  startVerse: 12, endChapter: 11, endVerse: 25 },
+    "Parashat Re'eh":            { book: "Deuteronomy",  hebrewBook: "דברים",  startChapter: 11, startVerse: 26, endChapter: 16, endVerse: 17 },
+    "Parashat Shoftim":          { book: "Deuteronomy",  hebrewBook: "דברים",  startChapter: 16, startVerse: 18, endChapter: 21, endVerse: 9  },
+    "Parashat Ki Teitzei":       { book: "Deuteronomy",  hebrewBook: "דברים",  startChapter: 21, startVerse: 10, endChapter: 25, endVerse: 19 },
+    "Parashat Ki Tavo":          { book: "Deuteronomy",  hebrewBook: "דברים",  startChapter: 26, startVerse: 1,  endChapter: 29, endVerse: 8  },
+    "Parashat Nitzavim":         { book: "Deuteronomy",  hebrewBook: "דברים",  startChapter: 29, startVerse: 9,  endChapter: 30, endVerse: 20 },
+    "Parashat Vayeilech":        { book: "Deuteronomy",  hebrewBook: "דברים",  startChapter: 31, startVerse: 1,  endChapter: 31, endVerse: 30 },
+    "Parashat Nitzavim-Vayeilech":{ book: "Deuteronomy", hebrewBook: "דברים",  startChapter: 29, startVerse: 9,  endChapter: 31, endVerse: 30 },
+    "Parashat Ha'azinu":         { book: "Deuteronomy",  hebrewBook: "דברים",  startChapter: 32, startVerse: 1,  endChapter: 32, endVerse: 52 }
 };
+
+/* ─────────────────────────────────────────────────────────────────
+   UTILITY FUNCTIONS
+───────────────────────────────────────────────────────────────── */
 
 function parseTime(timeStr, baseDate) {
     if (!timeStr) return new Date();
@@ -306,9 +322,9 @@ function formatTime(d) {
 }
 
 function getLocalISODate(date) {
-    const year = date.getFullYear();
+    const year  = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
+    const day   = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
 }
 
@@ -324,8 +340,7 @@ function getWeatherAtHours(weatherRes, hoursWanted = [7, 12]) {
 
     const out = {};
     for (let i = 0; i < hourly.time.length; i++) {
-        const t = hourly.time[i];
-        const h = new Date(t).getHours();
+        const h = new Date(hourly.time[i]).getHours();
         if (hoursWanted.includes(h)) {
             out[h] = {
                 temp: Math.round(hourly.temperature_2m[i]),
@@ -335,18 +350,18 @@ function getWeatherAtHours(weatherRes, hoursWanted = [7, 12]) {
     }
 
     return {
-        weather7h: out[7] || null,
+        weather7h:  out[7]  || null,
         weather12h: out[12] || null
     };
 }
 
 function getWeatherDesc(code) {
     if (!code && code !== 0) return '';
-    if (code <= 3) return 'בהיר';
-    if (code >= 45 && code <= 48) return 'ערפל';
+    if (code <= 3)                                    return 'בהיר';
+    if (code >= 45 && code <= 48)                     return 'ערפל';
     if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return 'גשום';
     if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) return 'שלג';
-    if (code >= 95 && code <= 99) return 'סוער';
+    if (code >= 95 && code <= 99)                     return 'סוער';
     return 'מעונן';
 }
 
@@ -356,29 +371,29 @@ function toHebrewNumber(num) {
 
     if (num === 15) return "טו";
     if (num === 16) return "טז";
-
-    if (num < 10) return ones[num];
+    if (num < 10)   return ones[num];
     if (num < 100) {
-        const t = Math.floor(num / 10);
-        const o = num % 10;
-        return `${tens[t]}${ones[o]}`;
+        return `${tens[Math.floor(num / 10)]}${ones[num % 10]}`;
     }
-
     return String(num);
 }
+
+/* ─────────────────────────────────────────────────────────────────
+   API: RANDOM PASUK
+───────────────────────────────────────────────────────────────── */
 
 async function fetchRandomPasukForParasha(parashaTitle) {
     try {
         const range = PARASHA_RANGES[parashaTitle];
         if (!range) return null;
 
-        const chapter =
-            Math.floor(Math.random() * (range.endChapter - range.startChapter + 1)) + range.startChapter;
+        const chapter = Math.floor(
+            Math.random() * (range.endChapter - range.startChapter + 1)
+        ) + range.startChapter;
 
-        const res = await fetch(
+        const res  = await fetch(
             `https://www.sefaria.org/api/v3/texts/${range.book}.${chapter}?version=source&return_format=text_only`
         );
-
         const json = await res.json();
         const verses = json?.versions?.[0]?.text || [];
 
@@ -386,9 +401,8 @@ async function fetchRandomPasukForParasha(parashaTitle) {
 
         let minVerse = 1;
         let maxVerse = verses.length;
-
         if (chapter === range.startChapter) minVerse = range.startVerse;
-        if (chapter === range.endChapter) maxVerse = Math.min(range.endVerse, verses.length);
+        if (chapter === range.endChapter)   maxVerse = Math.min(range.endVerse, verses.length);
 
         const validVerses = verses
             .map((text, index) => ({
@@ -411,14 +425,19 @@ async function fetchRandomPasukForParasha(parashaTitle) {
     }
 }
 
+/* ─────────────────────────────────────────────────────────────────
+   APP COMPONENT
+───────────────────────────────────────────────────────────────── */
+
 function App() {
-    const [now, setNow] = useState(new Date());
-    const [data, setData] = useState(null);
-    const [zmanim, setZmanim] = useState([]);
-    const [loading, setLoading] = useState(true);
+    // ── State ──────────────────────────────────────────────────────
+    const [now,          setNow]          = useState(new Date());
+    const [data,         setData]         = useState(null);
+    const [zmanim,       setZmanim]       = useState([]);
+    const [loading,      setLoading]      = useState(true);
     const [showSettings, setShowSettings] = useState(false);
-    const [weather, setWeather] = useState(null);
-    const [randomPasuk, setRandomPasuk] = useState(null);
+    const [weather,      setWeather]      = useState(null);
+    const [randomPasuk,  setRandomPasuk]  = useState(null);
 
     const [selectedCity, setSelectedCity] = useState(() => {
         const saved = localStorage.getItem('selectedCity_v1');
@@ -427,7 +446,10 @@ function App() {
 
     const [visibleIds, setVisibleIds] = useState(() => {
         const saved = localStorage.getItem('visibleZmanim_v4');
-        return saved ? JSON.parse(saved) : ['alot', 'sunrise', 'shema', 'tefillah', 'chatzot', 'mincha_g', 'plag', 'shkia', 'tzeit', 'chatzot_l'];
+        return saved ? JSON.parse(saved) : [
+            'alot', 'sunrise', 'shema', 'tefillah', 'chatzot',
+            'mincha_g', 'plag', 'shkia', 'tzeit', 'chatzot_l'
+        ];
     });
 
     const [reminders, setReminders] = useState(() => {
@@ -435,6 +457,7 @@ function App() {
         return saved ? JSON.parse(saved) : [];
     });
 
+    // ── Persist to localStorage ────────────────────────────────────
     useEffect(() => {
         localStorage.setItem('visibleZmanim_v4', JSON.stringify(visibleIds));
     }, [visibleIds]);
@@ -447,42 +470,40 @@ function App() {
         localStorage.setItem('selectedCity_v1', selectedCity);
     }, [selectedCity]);
 
+    // ── Fetch zmanim + data ────────────────────────────────────────
     const fetchData = useCallback(async () => {
         try {
             setLoading(true);
 
             const coords = CITIES[selectedCity];
-            if (!coords) {
-                setLoading(false);
-                return;
-            }
+            if (!coords) { setLoading(false); return; }
 
-            const nowLocal = new Date();
-            const civilDate = new Date(nowLocal);
-            const civilIso = getLocalISODate(civilDate);
+            const nowLocal   = new Date();
+            const civilDate  = new Date(nowLocal);
+            const civilIso   = getLocalISODate(civilDate);
             const tomorrowDate = addDays(civilDate, 1);
-            const tomorrowIso = getLocalISODate(tomorrowDate);
+            const tomorrowIso  = getLocalISODate(tomorrowDate);
 
             const solarRes = await fetch(
                 `https://api.sunrisesunset.io/json?lat=${coords.lat}&lng=${coords.lng}&date=${civilIso}`
             ).then(r => r.json());
 
-            const solar = solarRes.results;
+            const solar   = solarRes.results;
             const sunrise = parseTime(solar.sunrise, civilDate);
-            const sunset = parseTime(solar.sunset, civilDate);
-            const dawn = parseTime(solar.dawn, civilDate);
-            const dusk = parseTime(solar.dusk, civilDate);
-            const noon = parseTime(solar.solar_noon, civilDate);
+            const sunset  = parseTime(solar.sunset,  civilDate);
+            const dawn    = parseTime(solar.dawn,    civilDate);
+            const dusk    = parseTime(solar.dusk,    civilDate);
+            const noon    = parseTime(solar.solar_noon, civilDate);
 
-            const shaah = (sunset.getTime() - sunrise.getTime()) / 12;
+            const shaah       = (sunset.getTime() - sunrise.getTime()) / 12;
             const chatzotLaila = new Date(noon.getTime() + 12 * 60 * 60 * 1000);
 
             const isAfterTzeit = nowLocal >= dusk;
             const effectiveDate = isAfterTzeit ? tomorrowDate : civilDate;
-            const effectiveIso = isAfterTzeit ? tomorrowIso : civilIso;
+            const effectiveIso  = isAfterTzeit ? tomorrowIso  : civilIso;
 
             const daysUntilSat = (6 - effectiveDate.getDay() + 7) % 7;
-            const sat = addDays(effectiveDate, daysUntilSat);
+            const sat    = addDays(effectiveDate, daysUntilSat);
             const satIso = getLocalISODate(sat);
 
             const y = effectiveDate.getFullYear();
@@ -495,14 +516,14 @@ function App() {
                 fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lng}&hourly=temperature_2m,weather_code&timezone=auto&forecast_days=1`).then(r => r.json())
             ]);
 
-            const extracted = getWeatherAtHours(weatherRes, [7, 12]);
-            setWeather(extracted);
+            setWeather(getWeatherAtHours(weatherRes, [7, 12]));
 
             const items = dailyRes.items || [];
+
             const daf = items.find(i => i.category === 'dafyomi' && i.date === effectiveIso)?.hebrew || "---";
 
             const parashaEvent = items.find(i => i.category === 'parashat' && i.date === satIso);
-            const parashaHeb = parashaEvent ? parashaEvent.hebrew.replace('פרשת ', '') : "---";
+            const parashaHeb   = parashaEvent ? parashaEvent.hebrew.replace('פרשת ', '') : "---";
             const parashaTitle = parashaEvent ? parashaEvent.title : null;
 
             const specialEvents = items.filter(i =>
@@ -520,28 +541,28 @@ function App() {
             }));
 
             const omerItem = items.find(i => i.category === 'omer' && i.date === effectiveIso) || null;
-            const omer = omerItem?.omer?.count?.he || null;
+            const omer     = omerItem?.omer?.count?.he || null;
 
             const list = [
-                { id: 'alot', label: 'עלות השחר', fullTime: dawn, time: formatTime(dawn) },
-                { id: 'sunrise', label: 'נץ החמה', fullTime: sunrise, time: formatTime(sunrise) },
-                { id: 'shema', label: 'סוף זמן שמע', fullTime: new Date(sunrise.getTime() + 3 * shaah), time: formatTime(new Date(sunrise.getTime() + 3 * shaah)) },
-                { id: 'tefillah', label: 'סוף זמן תפילה', fullTime: new Date(sunrise.getTime() + 4 * shaah), time: formatTime(new Date(sunrise.getTime() + 4 * shaah)) },
-                { id: 'chatzot', label: 'חצות היום', fullTime: noon, time: formatTime(noon) },
-                { id: 'mincha_g', label: 'מנחה גדולה', fullTime: new Date(noon.getTime() + 0.5 * shaah), time: formatTime(new Date(noon.getTime() + 0.5 * shaah)) },
-                { id: 'plag', label: 'פלג המנחה', fullTime: new Date(sunrise.getTime() + 10.75 * shaah), time: formatTime(new Date(sunrise.getTime() + 10.75 * shaah)) },
-                { id: 'shkia', label: 'שקיעה', fullTime: sunset, time: formatTime(sunset) },
-                { id: 'tzeit', label: 'צאת הכוכבים', fullTime: dusk, time: formatTime(dusk) },
-                { id: 'chatzot_l', label: 'חצות לילה', fullTime: chatzotLaila, time: formatTime(chatzotLaila) }
+                { id: 'alot',     label: 'עלות השחר',     fullTime: dawn,                                                       time: formatTime(dawn) },
+                { id: 'sunrise',  label: 'נץ החמה',        fullTime: sunrise,                                                    time: formatTime(sunrise) },
+                { id: 'shema',    label: 'סוף זמן שמע',    fullTime: new Date(sunrise.getTime() + 3    * shaah),                 time: formatTime(new Date(sunrise.getTime() + 3    * shaah)) },
+                { id: 'tefillah', label: 'סוף זמן תפילה',  fullTime: new Date(sunrise.getTime() + 4    * shaah),                 time: formatTime(new Date(sunrise.getTime() + 4    * shaah)) },
+                { id: 'chatzot',  label: 'חצות היום',      fullTime: noon,                                                       time: formatTime(noon) },
+                { id: 'mincha_g', label: 'מנחה גדולה',     fullTime: new Date(noon.getTime()    + 0.5  * shaah),                 time: formatTime(new Date(noon.getTime()    + 0.5  * shaah)) },
+                { id: 'plag',     label: 'פלג המנחה',      fullTime: new Date(sunrise.getTime() + 10.75 * shaah),                time: formatTime(new Date(sunrise.getTime() + 10.75 * shaah)) },
+                { id: 'shkia',    label: 'שקיעה',           fullTime: sunset,                                                     time: formatTime(sunset) },
+                { id: 'tzeit',    label: 'צאת הכוכבים',    fullTime: dusk,                                                       time: formatTime(dusk) },
+                { id: 'chatzot_l',label: 'חצות לילה',      fullTime: chatzotLaila,                                               time: formatTime(chatzotLaila) }
             ];
 
             setData({
-                hebrewDate: hebDateRes.hebrew,
+                hebrewDate:   hebDateRes.hebrew,
+                gregorianDate:`${String(effectiveDate.getDate()).padStart(2,'0')}.${String(effectiveDate.getMonth()+1).padStart(2,'0')}.${effectiveDate.getFullYear()}`,
                 daf,
                 parashaHeb,
                 parashaTitle,
                 holidays: holidayInfo,
-                gregorianDate: `${String(effectiveDate.getDate()).padStart(2, '0')}.${String(effectiveDate.getMonth() + 1).padStart(2, '0')}.${effectiveDate.getFullYear()}`,
                 omer
             });
 
@@ -553,55 +574,43 @@ function App() {
         }
     }, [selectedCity]);
 
+    // ── Fetch pasuk ────────────────────────────────────────────────
     const refreshPasuk = useCallback(async (parashaTitle) => {
-        if (!parashaTitle) {
-            setRandomPasuk(null);
-            return;
-        }
+        if (!parashaTitle) { setRandomPasuk(null); return; }
         const pasuk = await fetchRandomPasukForParasha(parashaTitle);
         setRandomPasuk(pasuk);
     }, []);
 
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+    // ── Effects ────────────────────────────────────────────────────
+    useEffect(() => { fetchData(); }, [fetchData]);
 
     useEffect(() => {
         if (!data?.parashaTitle) return;
-
         refreshPasuk(data.parashaTitle);
-
-        const interval = setInterval(() => {
-            refreshPasuk(data.parashaTitle);
-        }, 5 * 60 * 1000);
-
+        const interval = setInterval(() => refreshPasuk(data.parashaTitle), 5 * 60 * 1000);
         return () => clearInterval(interval);
     }, [data?.parashaTitle, refreshPasuk]);
 
+    // Refetch after tzeit (new halachic day)
     useEffect(() => {
         if (!zmanim.length) return;
-
         const tzeitZman = zmanim.find(z => z.id === 'tzeit');
         if (!tzeitZman) return;
-
         const msUntilTzeit = tzeitZman.fullTime.getTime() - Date.now();
         if (msUntilTzeit <= 0) return;
-
-        const timer = setTimeout(() => {
-            fetchData();
-        }, msUntilTzeit + 1000);
-
+        const timer = setTimeout(() => fetchData(), msUntilTzeit + 1000);
         return () => clearTimeout(timer);
     }, [zmanim, fetchData]);
 
+    // Clock tick
     useEffect(() => {
         const timer = setInterval(() => setNow(new Date()), 1000);
         return () => clearInterval(timer);
     }, []);
 
+    // Midnight refetch
     useEffect(() => {
         let lastCheckedDate = new Date().toDateString();
-
         const dayCheckTimer = setInterval(() => {
             const currentDate = new Date().toDateString();
             if (currentDate !== lastCheckedDate) {
@@ -609,16 +618,14 @@ function App() {
                 fetchData();
             }
         }, 60000);
-
         return () => clearInterval(dayCheckTimer);
     }, [fetchData]);
 
+    // ── Derived values ─────────────────────────────────────────────
     const nextZman = useMemo(() => {
         if (!zmanim.length) return null;
         const sorted = [...zmanim].sort((a, b) => a.fullTime - b.fullTime);
-        let next = sorted.find(z => z.fullTime > now);
-        if (!next) next = sorted[0];
-        return next;
+        return sorted.find(z => z.fullTime > now) || sorted[0];
     }, [zmanim, now]);
 
     const activeZman = useMemo(() => {
@@ -638,81 +645,78 @@ function App() {
                 time: activeZman.time
             };
         }
-
         if (!nextZman) return null;
-        const diff = nextZman.fullTime.getTime() - now.getTime();
 
+        const diff = nextZman.fullTime.getTime() - now.getTime();
         if (diff > 0 && diff <= 1800000) {
             const m = Math.floor(diff / 60000);
             const s = Math.floor((diff % 60000) / 1000);
             const timeString = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 
             let colorClass = "text-green-500 glow-green";
-            if (diff <= 60000) colorClass = "text-red-600 glow-red";
+            if (diff <= 60000)  colorClass = "text-red-600 glow-red";
             else if (diff <= 300000) colorClass = "text-orange-500 glow-orange";
 
             return { timeString, colorClass, isProgressBar: false };
         }
-
         return null;
     }, [nextZman, activeZman, now]);
 
+    const visibleZmanim = zmanim
+        .filter(z => visibleIds.includes(z.id))
+        .sort((a, b) => a.fullTime - b.fullTime);
+
+    const curTime = formatTime(now);
+
+    // ── Loading screen ─────────────────────────────────────────────
     if (loading) {
         return (
             <div className="h-screen flex items-center justify-center bg-black">
-                <div className="text-yellow-400 font-bold text-2xl animate-pulse digital-font tracking-[0.5em]">LOADING...</div>
+                <div className="text-yellow-400 font-bold text-2xl animate-pulse digital-font tracking-[0.5em]">
+                    LOADING...
+                </div>
             </div>
         );
     }
 
-    const curTime = formatTime(now);
-    const visibleZmanim = zmanim.filter(z => visibleIds.includes(z.id)).sort((a, b) => a.fullTime - b.fullTime);
-
+    /* ── Render ─────────────────────────────────────────────────── */
     return (
         <div className="h-screen flex flex-col justify-between px-6 py-3 overflow-hidden bg-black text-white">
+
+            {/* ── HEADER ── */}
             <header className="w-full border-b border-white/10 pb-4 pt-3 shrink-0">
                 <div className="header-grid">
+
+                    {/* Daf Yomi */}
                     <div className="header-card shrink-0">
                         <div className="text-white/30 text-base uppercase tracking-widest mb-1">דף היומי</div>
-						<div className="text-green-400 text-2xl md:text-3xl font-black whitespace-nowrap overflow-hidden text-ellipsis">
-							{data?.daf || "---"}
-						</div>
+                        <div className="text-green-400 text-2xl md:text-3xl font-black whitespace-nowrap overflow-hidden text-ellipsis">
+                            {data?.daf || "---"}
+                        </div>
                     </div>
 
+                    {/* Hebrew + Gregorian date */}
                     <div className="header-card">
-						<div className="text-sky-100 text-2xl md:text-3xl font-black whitespace-nowrap overflow-hidden text-ellipsis mb-1">
-							{data?.hebrewDate || "---"}
-						</div>
-
-{data?.omer && (
-    <div className="omer-ticker mb-1">
-        <div className="omer-track">
-            <div className="omer-item text-purple-400 text-base md:text-xl font-black">
-                {data.omer}
-            </div>
-            <div className="omer-item text-purple-400 text-base md:text-xl font-black" aria-hidden="true">
-                {data.omer}
-            </div>
-        </div>
-    </div>
-)}
-
+                        <div className="text-sky-100 text-2xl md:text-3xl font-black whitespace-nowrap overflow-hidden text-ellipsis mb-1">
+                            {data?.hebrewDate || "---"}
+                        </div>
                         <div className="text-white/40 text-lg md:text-2xl digital-font font-bold tracking-wider">
                             {data?.gregorianDate || "---"}
                         </div>
                     </div>
 
+                    {/* Clock */}
                     <div className="header-card flex items-center justify-center">
-						<div className="text-yellow-400 digital-font font-black text-5xl md:text-6xl leading-none whitespace-nowrap">
-							{curTime}
-						</div>
+                        <div className="text-yellow-400 digital-font font-black text-5xl md:text-6xl leading-none whitespace-nowrap">
+                            {curTime}
+                        </div>
                     </div>
 
+                    {/* City + Weather */}
                     <div className="header-card">
                         <div className="text-green-400 text-3xl md:text-4xl font-black leading-none mb-2 text-center">
                             {CITIES[selectedCity].name}
                         </div>
-
                         {weather?.weather7h && weather?.weather12h && (
                             <div className="flex gap-3 items-center justify-center">
                                 <div className="text-center">
@@ -723,9 +727,7 @@ function App() {
                                         {getWeatherDesc(weather.weather7h.code)}
                                     </div>
                                 </div>
-
                                 <div className="text-white/20 text-lg">/</div>
-
                                 <div className="text-center">
                                     <div className="text-orange-400 text-3xl md:text-4xl font-black">
                                         {weather.weather12h.temp}°
@@ -738,14 +740,17 @@ function App() {
                         )}
                     </div>
 
+                    {/* Parasha + holidays + Omer + Pasuk */}
                     <div className="header-card">
                         <div className="flex items-start justify-between gap-4">
                             <div className="min-w-0 flex-1">
-                                <div class="text-sky-100 text-2xl md:text-3xl font-black whitespace-nowrap overflow-hidden text-ellipsis mb-1">
-                                    {HEBREW_DAYS[now.getDay()]} -  <span className="text-sky-400 text-3xl md:text-4xl font-black leading-none mb-2 truncate"> {data?.parashaHeb || "---"} </span>	
+                                <div className="text-sky-100 text-2xl md:text-3xl font-black whitespace-nowrap overflow-hidden text-ellipsis mb-1">
+                                    {HEBREW_DAYS[now.getDay()]} -{" "}
+                                    <span className="text-sky-400 text-3xl md:text-4xl font-black leading-none mb-2 truncate">
+                                        {data?.parashaHeb || "---"}
+                                    </span>
                                 </div>
                             </div>
-
                             {data?.holidays?.length > 0 && (
                                 <div className="flex flex-col items-end gap-1 shrink-0">
                                     {data.holidays.map((h, i) => (
@@ -764,6 +769,21 @@ function App() {
                             )}
                         </div>
 
+                        {/* Omer */}
+                        {data?.omer && (
+                            <div className="omer-ticker mb-1">
+                                <div className="omer-track">
+                                    <div className="omer-item text-purple-400 text-base md:text-xl font-black">
+                                        {data.omer}
+                                    </div>
+                                    <div className="omer-item text-purple-400 text-base md:text-xl font-black" aria-hidden="true">
+                                        {data.omer}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Pasuk */}
                         {randomPasuk && (
                             <div className="pasuk-ticker" title={`${randomPasuk.hebrewRef} — ${randomPasuk.text}`}>
                                 <div className="pasuk-track">
@@ -772,7 +792,6 @@ function App() {
                                         <span>—</span>
                                         <span className="mr-2">{randomPasuk.text}</span>
                                     </div>
-
                                     <div className="pasuk-item pasuk-text" aria-hidden="true">
                                         <span className="pasuk-ref">{randomPasuk.hebrewRef}</span>
                                         <span>—</span>
@@ -782,9 +801,11 @@ function App() {
                             </div>
                         )}
                     </div>
+
                 </div>
             </header>
 
+            {/* ── MAIN COUNTDOWN ── */}
             <main className="flex-grow flex flex-col items-center justify-center relative min-h-0">
                 {countdownData ? (
                     <div className="flex flex-col items-center w-full max-w-6xl">
@@ -839,21 +860,20 @@ function App() {
                 )}
             </main>
 
+            {/* ── FOOTER: ZMANIM STRIP ── */}
             <footer className="w-full footer-gradient backdrop-blur-lg rounded-3xl py-4 border border-white/10 shadow-2xl shrink-0">
                 <div className="flex flex-row-reverse flex-wrap gap-1 md:gap-2 justify-center px-2">
                     {visibleZmanim.map(z => {
-                        const isActive = nextZman?.id === z.id;
+                        const isActive    = nextZman?.id === z.id;
                         const hasReminder = reminders.includes(z.id);
                         return (
                             <div
                                 key={z.id}
-                                onClick={() => {
-                                    setReminders(prev =>
-                                        prev.includes(z.id)
-                                            ? prev.filter(i => i !== z.id)
-                                            : [...prev, z.id]
-                                    );
-                                }}
+                                onClick={() => setReminders(prev =>
+                                    prev.includes(z.id)
+                                        ? prev.filter(i => i !== z.id)
+                                        : [...prev, z.id]
+                                )}
                                 className={`zman-card rounded-xl px-2 py-2 md:px-3 md:py-3 flex flex-col items-center min-w-[80px] md:min-w-[110px] flex-grow md:flex-grow-0 transition-all ${isActive ? 'active-zman' : ''} ${z.fullTime < now ? 'opacity-50' : ''}`}
                             >
                                 {hasReminder && <i className="fa-solid fa-bell reminder-icon"></i>}
@@ -867,12 +887,12 @@ function App() {
                         );
                     })}
                 </div>
-
                 <div className="text-center text-[7px] md:text-[9px] text-white/10 uppercase tracking-[0.6em] mt-2 font-bold">
                     {CITIES[selectedCity].name} Dashboard • Method Gra • GPS: {CITIES[selectedCity].lat}, {CITIES[selectedCity].lng}
                 </div>
             </footer>
 
+            {/* ── SETTINGS MODAL ── */}
             {showSettings && (
                 <div
                     className="fixed inset-0 modal-overlay z-50 flex items-center justify-center p-6"
@@ -887,6 +907,7 @@ function App() {
                             Configuration
                         </h2>
 
+                        {/* City selector */}
                         <div className="mb-8">
                             <h3 className="text-xl font-black text-sky-400 mb-4 text-center">
                                 <i className="fa-solid fa-location-dot ml-2"></i>
@@ -909,6 +930,7 @@ function App() {
                             </div>
                         </div>
 
+                        {/* Zmanim visibility */}
                         <div>
                             <h3 className="text-xl font-black text-yellow-400 mb-4 text-center">
                                 <i className="fa-solid fa-clock ml-2"></i>
@@ -928,13 +950,11 @@ function App() {
                                         <input
                                             type="checkbox"
                                             checked={visibleIds.includes(z.id)}
-                                            onChange={() =>
-                                                setVisibleIds(prev =>
-                                                    prev.includes(z.id)
-                                                        ? prev.filter(i => i !== z.id)
-                                                        : [...prev, z.id]
-                                                )
-                                            }
+                                            onChange={() => setVisibleIds(prev =>
+                                                prev.includes(z.id)
+                                                    ? prev.filter(i => i !== z.id)
+                                                    : [...prev, z.id]
+                                            )}
                                             className="w-6 h-6 accent-yellow-400 rounded-lg cursor-pointer"
                                         />
                                     </label>
@@ -952,9 +972,14 @@ function App() {
                     </div>
                 </div>
             )}
+
         </div>
     );
 }
+
+/* ─────────────────────────────────────────────────────────────────
+   MOUNT
+───────────────────────────────────────────────────────────────── */
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<App />);
