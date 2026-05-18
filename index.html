@@ -534,8 +534,8 @@ function App() {
 
             const [hebDateRes, dailyRes, weatherRes] = await Promise.all([
                 fetch(`https://www.hebcal.com/converter?cfg=json&gy=${y}&gm=${m}&gd=${d}&g2h=1`).then(r => r.json()),
-                fetch(`https://www.hebcal.com/hebcal?v=1&cfg=json&maj=on&min=on&mod=on&nx=on&start=${civilIso}&end=${satIso}&ss=on&mf=on&c=off&geo=none&F=on&heb=on&s=on&o=on`).then(r => r.json()),
-                fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lng}&hourly=temperature_2m,weather_code&timezone=auto&forecast_days=3`).then(r => r.json())
+				etch(`https://www.hebcal.com/hebcal?v=1&cfg=json&maj=on&min=on&mod=on&nx=on&start=${civilIso}&end=${satIso}&ss=on&mf=on&c=off&geo=none&F=on&heb=on&s=on&o=on&i=on`).then(r => r.json()),
+				fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lng}&hourly=temperature_2m,weather_code&timezone=auto&forecast_days=3`).then(r => r.json())
             ]);
 
             setWeather(getWeatherForecast(weatherRes));
