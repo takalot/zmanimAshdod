@@ -11,6 +11,8 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <!-- Montre suisse -->
+    <script src="suisseclock.js"></script>
 
     <style>
         /* ─── Base ─────────────────────────────────────────────── */
@@ -25,26 +27,38 @@
 
         .digital-font { font-family: 'JetBrains Mono', monospace; }
 
-        /* ─── Header layout ─────────────────────────────────────── */
+         /* ─── Header layout ───────────────────────────────────────
+           Structure: gauche = Parasha/Meteo, centre = espace libre pour la montre,
+           droite = Date/Daf. Le centre reste vide pour ne jamais compresser la montre. */
         .header-grid {
             display: grid;
-            grid-template-columns: 250px 320px 360px 240px minmax(520px, 1fr);
-            gap: 16px;
+            grid-template-columns: minmax(520px, 1.55fr) 240px minmax(260px, 1fr) 280px 220px;
+            gap: 12px;
             align-items: stretch;
+            direction: ltr;
         }
 
-		.header-card {
-			background: rgba(255, 255, 255, 0.03);
-			border: 1px solid rgba(251, 206, 7, 0.35);
-			border-radius: 18px;
-			padding: 1rem 1.25rem;
-			min-width: 0;
-			overflow: hidden;
+        .header-spacer { min-width: 180px; }
 
-			box-shadow:
-				0 0 10px rgba(251, 206, 7, 0.25),
-				0 0 25px rgba(251, 206, 7, 0.15);
-		}
+        .header-card{
+            background:rgba(255,255,255,0.03);
+            border:1px solid rgba(251,206,7,0.35);
+            border-radius:16px;
+            padding:0.50rem 0.95rem;
+            min-width:0;
+            overflow:hidden;
+            direction:rtl;
+            box-shadow:0 0 12px rgba(251,206,7,0.22),0 0 32px rgba(251,206,7,0.10);
+            backdrop-filter:blur(10px);
+        }
+
+        .parasha-card { overflow:hidden; min-height:112px; }
+        .header-title-line { min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+
+        @media (max-width: 1500px) {
+            .header-grid { grid-template-columns: minmax(460px, 1.45fr) 210px minmax(180px, .8fr) 250px 190px; gap:10px; }
+            .header-card { padding:0.42rem 0.75rem; }
+        }
 
         /* ─── Zman cards ────────────────────────────────────────── */
         .zman-card {
@@ -77,6 +91,7 @@
             font-size: 12px;
             animation: bounce 2s infinite;
         }
+
 
         /* ─── Footer ────────────────────────────────────────────── */
         .footer-gradient {
@@ -149,64 +164,37 @@
             to   { transform: translateX(0); }
         }
 
-        /* ─── Pasuk ticker ──────────────────────────────────────── */
+        /* ─── Pasuk ticker ────────────────────────────────────────
+           Important: le passouk est toujours rendu dans une zone avec hauteur minimale.
+           Si l'appel API échoue, le composant affiche un message de secours. */
         .pasuk-ticker {
             width: 100%;
+            min-height: 34px;
             overflow: hidden;
             white-space: nowrap;
             position: relative;
-            margin-top: 0.75rem;
-            padding-top: 0.65rem;
+            margin-top: 0.25rem;
+            padding-top: 0.25rem;
+            display:flex;
+            align-items:center;
             border-top: 1px solid rgba(255, 255, 255, 0.08);
             direction: ltr;
             mask-image: linear-gradient(to right, transparent 0%, white 6%, white 94%, transparent 100%);
             -webkit-mask-image: linear-gradient(to right, transparent 0%, white 6%, white 94%, transparent 100%);
         }
-
-        .pasuk-track {
-            display: inline-flex;
-            align-items: center;
-            white-space: nowrap;
-            width: max-content;
-            will-change: transform;
-            animation: pasuk-marquee 8s linear infinite;
-        }
-
+        .pasuk-track { display:inline-flex; align-items:center; white-space:nowrap; width:max-content; will-change:transform; animation:pasuk-marquee 12s linear infinite; }
         .pasuk-track:hover { animation-play-state: paused; }
-
-        .pasuk-item {
-            display: inline-flex;
-            align-items: center;
-            flex-shrink: 0;
-            padding-right: 4rem;
-            direction: rtl;
-        }
-
-        .pasuk-text {
-            font-family: Arial, sans-serif;
-            font-size: 0.95rem;
-            line-height: 1.35;
-            font-weight: 700;
-            color: rgba(255, 255, 255, 0.96);
-        }
-
-        .pasuk-ref {
-            color: #fbce07;
-            white-space: nowrap;
-            margin-left: 0.6rem;
-        }
-
-        @keyframes pasuk-marquee {
-            from { transform: translateX(-50%); }
-            to   { transform: translateX(0); }
-        }
+        .pasuk-item { display:inline-flex; align-items:center; flex-shrink:0; padding-right:4rem; direction:rtl; }
+        .pasuk-text { font-family:'Heebo', Arial, sans-serif; font-size:0.92rem; line-height:1.25; font-weight:700; color:rgba(255,255,255,0.96); }
+        .pasuk-ref { color:#fbce07; white-space:nowrap; margin-left:0.6rem; font-weight:900; }
+        @keyframes pasuk-marquee { from { transform:translateX(-50%); } to { transform:translateX(0); } }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
 <script type="text/babel">
-const { useState, useEffect, useMemo, useCallback } = React;
+const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
 /* ─────────────────────────────────────────────────────────────────
    CONSTANTS
@@ -234,7 +222,6 @@ const HEBREW_DAYS = [
 ];
 
 const PARASHA_RANGES = {
-    // בראשית
     "Parashat Bereshit":         { book: "Genesis",      hebrewBook: "בראשית", startChapter: 1,  startVerse: 1,  endChapter: 6,  endVerse: 8  },
     "Parashat Noach":            { book: "Genesis",      hebrewBook: "בראשית", startChapter: 6,  startVerse: 9,  endChapter: 11, endVerse: 32 },
     "Parashat Lech-Lecha":       { book: "Genesis",      hebrewBook: "בראשית", startChapter: 12, startVerse: 1,  endChapter: 17, endVerse: 27 },
@@ -247,7 +234,6 @@ const PARASHA_RANGES = {
     "Parashat Miketz":           { book: "Genesis",      hebrewBook: "בראשית", startChapter: 41, startVerse: 1,  endChapter: 44, endVerse: 17 },
     "Parashat Vayigash":         { book: "Genesis",      hebrewBook: "בראשית", startChapter: 44, startVerse: 18, endChapter: 47, endVerse: 27 },
     "Parashat Vayechi":          { book: "Genesis",      hebrewBook: "בראשית", startChapter: 47, startVerse: 28, endChapter: 50, endVerse: 26 },
-    // שמות
     "Parashat Shemot":           { book: "Exodus",       hebrewBook: "שמות",   startChapter: 1,  startVerse: 1,  endChapter: 6,  endVerse: 1  },
     "Parashat Vaera":            { book: "Exodus",       hebrewBook: "שמות",   startChapter: 6,  startVerse: 2,  endChapter: 9,  endVerse: 35 },
     "Parashat Bo":               { book: "Exodus",       hebrewBook: "שמות",   startChapter: 10, startVerse: 1,  endChapter: 13, endVerse: 16 },
@@ -260,7 +246,6 @@ const PARASHA_RANGES = {
     "Parashat Vayakhel":         { book: "Exodus",       hebrewBook: "שמות",   startChapter: 35, startVerse: 1,  endChapter: 38, endVerse: 20 },
     "Parashat Pekudei":          { book: "Exodus",       hebrewBook: "שמות",   startChapter: 38, startVerse: 21, endChapter: 40, endVerse: 38 },
     "Parashat Vayakhel-Pekudei": { book: "Exodus",       hebrewBook: "שמות",   startChapter: 35, startVerse: 1,  endChapter: 40, endVerse: 38 },
-    // ויקרא
     "Parashat Vayikra":          { book: "Leviticus",    hebrewBook: "ויקרא",  startChapter: 1,  startVerse: 1,  endChapter: 5,  endVerse: 26 },
     "Parashat Tzav":             { book: "Leviticus",    hebrewBook: "ויקרא",  startChapter: 6,  startVerse: 1,  endChapter: 8,  endVerse: 36 },
     "Parashat Shmini":           { book: "Leviticus",    hebrewBook: "ויקרא",  startChapter: 9,  startVerse: 1,  endChapter: 11, endVerse: 47 },
@@ -274,7 +259,6 @@ const PARASHA_RANGES = {
     "Parashat Behar":            { book: "Leviticus",    hebrewBook: "ויקרא",  startChapter: 25, startVerse: 1,  endChapter: 26, endVerse: 2  },
     "Parashat Bechukotai":       { book: "Leviticus",    hebrewBook: "ויקרא",  startChapter: 26, startVerse: 3,  endChapter: 27, endVerse: 34 },
     "Parashat Behar-Bechukotai": { book: "Leviticus",    hebrewBook: "ויקרא",  startChapter: 25, startVerse: 1,  endChapter: 27, endVerse: 34 },
-    // במדבר
     "Parashat Bamidbar":         { book: "Numbers",      hebrewBook: "במדבר",  startChapter: 1,  startVerse: 1,  endChapter: 4,  endVerse: 20 },
     "Parashat Nasso":            { book: "Numbers",      hebrewBook: "במדבר",  startChapter: 4,  startVerse: 21, endChapter: 7,  endVerse: 89 },
     "Parashat Beha'alotcha":     { book: "Numbers",      hebrewBook: "במדבר",  startChapter: 8,  startVerse: 1,  endChapter: 12, endVerse: 16 },
@@ -287,7 +271,6 @@ const PARASHA_RANGES = {
     "Parashat Matot":            { book: "Numbers",      hebrewBook: "במדבר",  startChapter: 30, startVerse: 2,  endChapter: 32, endVerse: 42 },
     "Parashat Masei":            { book: "Numbers",      hebrewBook: "במדבר",  startChapter: 33, startVerse: 1,  endChapter: 36, endVerse: 13 },
     "Parashat Matot-Masei":      { book: "Numbers",      hebrewBook: "במדבר",  startChapter: 30, startVerse: 2,  endChapter: 36, endVerse: 13 },
-    // דברים
     "Parashat Devarim":          { book: "Deuteronomy",  hebrewBook: "דברים",  startChapter: 1,  startVerse: 1,  endChapter: 3,  endVerse: 22 },
     "Parashat Vaetchanan":       { book: "Deuteronomy",  hebrewBook: "דברים",  startChapter: 3,  startVerse: 23, endChapter: 7,  endVerse: 11 },
     "Parashat Eikev":            { book: "Deuteronomy",  hebrewBook: "דברים",  startChapter: 7,  startVerse: 12, endChapter: 11, endVerse: 25 },
@@ -318,10 +301,7 @@ function parseTime(timeStr, baseDate) {
 
 function formatTime(d) {
     return d.toLocaleTimeString('fr-FR', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false
+        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
     });
 }
 
@@ -341,35 +321,21 @@ function addDays(date, days) {
 function getWeatherForecast(weatherRes) {
     const hourly = weatherRes?.hourly;
     if (!hourly?.time || !hourly?.temperature_2m || !hourly?.weather_code) return null;
-
     const WANTED_HOURS = [6, 12, 18];
     const LABELS = { 6: 'בוקר', 12: 'צהריים', 18: 'ערב' };
-
-    // Grouper par date locale
     const byDate = {};
     for (let i = 0; i < hourly.time.length; i++) {
         const dt   = new Date(hourly.time[i]);
-        const date = hourly.time[i].slice(0, 10); // "YYYY-MM-DD"
+        const date = hourly.time[i].slice(0, 10);
         const hour = dt.getHours();
-
         if (!WANTED_HOURS.includes(hour)) continue;
-
         if (!byDate[date]) byDate[date] = {};
-        byDate[date][hour] = {
-            temp:  Math.round(hourly.temperature_2m[i]),
-            code:  hourly.weather_code[i],
-            label: LABELS[hour]
-        };
+        byDate[date][hour] = { temp: Math.round(hourly.temperature_2m[i]), code: hourly.weather_code[i], label: LABELS[hour] };
     }
-
-    // today + J+1 + J+2
     const dates = Object.keys(byDate).sort().slice(0, 3);
-
     return {
-        // Pour la carte actuelle (7h → on prend 6h, 12h reste 12h)
         weather7h:  byDate[dates[0]]?.[6]  || null,
         weather12h: byDate[dates[0]]?.[12] || null,
-        // Forecast J+1 et J+2
         forecast: dates.slice(1).map(date => ({
             date,
             slots: WANTED_HOURS.map(h => byDate[date]?.[h] || null)
@@ -379,24 +345,21 @@ function getWeatherForecast(weatherRes) {
 
 function getWeatherDesc(code) {
     if (!code && code !== 0) return '';
-    if (code <= 3)                                    return 'בהיר';
-    if (code >= 45 && code <= 48)                     return 'ערפל';
-    if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return 'גשום';
-    if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) return 'שלג';
-    if (code >= 95 && code <= 99)                     return 'סוער';
+    if (code <= 3)                                                             return 'בהיר';
+    if (code >= 45 && code <= 48)                                              return 'ערפל';
+    if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82))             return 'גשום';
+    if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86))             return 'שלג';
+    if (code >= 95 && code <= 99)                                              return 'סוער';
     return 'מעונן';
 }
 
 function toHebrewNumber(num) {
-    const ones = ["", "א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט"];
-    const tens = ["", "י", "כ", "ל", "מ", "נ", "ס", "ע", "פ", "צ"];
-
+    const ones = ["","א","ב","ג","ד","ה","ו","ז","ח","ט"];
+    const tens = ["","י","כ","ל","מ","נ","ס","ע","פ","צ"];
     if (num === 15) return "טו";
     if (num === 16) return "טז";
     if (num < 10)   return ones[num];
-    if (num < 100) {
-        return `${tens[Math.floor(num / 10)]}${ones[num % 10]}`;
-    }
+    if (num < 100)  return `${tens[Math.floor(num/10)]}${ones[num%10]}`;
     return String(num);
 }
 
@@ -405,46 +368,151 @@ function toHebrewNumber(num) {
 ───────────────────────────────────────────────────────────────── */
 
 async function fetchRandomPasukForParasha(parashaTitle) {
+    const fallback = {
+        hebrewRef: 'פסוק',
+        text: 'הפסוק האקראי יופיע כאן כאשר החיבור לספריא זמין'
+    };
+
     try {
         const range = PARASHA_RANGES[parashaTitle];
-        if (!range) return null;
+        if (!range) return fallback;
 
-        const chapter = Math.floor(
-            Math.random() * (range.endChapter - range.startChapter + 1)
-        ) + range.startChapter;
+        const chapter = Math.floor(Math.random() * (range.endChapter - range.startChapter + 1)) + range.startChapter;
+        let verses = [];
 
-        const res  = await fetch(
-            `https://www.sefaria.org/api/v3/texts/${range.book}.${chapter}?version=source&return_format=text_only`
-        );
-        const json = await res.json();
-        const verses = json?.versions?.[0]?.text || [];
+        // API principale: Sefaria v3.
+        try {
+            const res = await fetch(`https://www.sefaria.org/api/v3/texts/${range.book}.${chapter}?version=source&return_format=text_only`);
+            const json = await res.json();
+            verses = json?.versions?.[0]?.text || [];
+        } catch (e) {
+            console.warn('Sefaria v3 failed:', e);
+        }
 
-        if (!Array.isArray(verses) || verses.length === 0) return null;
+        // Fallback API: Sefaria v2 si le format v3 change ou ne répond pas.
+        if (!Array.isArray(verses) || verses.length === 0) {
+            try {
+                const res = await fetch(`https://www.sefaria.org/api/texts/${range.book}.${chapter}?context=0&commentary=0`);
+                const json = await res.json();
+                verses = json?.he || json?.text || [];
+            } catch (e) {
+                console.warn('Sefaria v2 failed:', e);
+            }
+        }
+
+        if (!Array.isArray(verses) || verses.length === 0) return fallback;
 
         let minVerse = 1;
         let maxVerse = verses.length;
         if (chapter === range.startChapter) minVerse = range.startVerse;
-        if (chapter === range.endChapter)   maxVerse = Math.min(range.endVerse, verses.length);
+        if (chapter === range.endChapter) maxVerse = Math.min(range.endVerse, verses.length);
 
         const validVerses = verses
             .map((text, index) => ({
                 verse: index + 1,
-                text: typeof text === 'string' ? text.replace(/\s+/g, ' ').trim() : ''
+                text: typeof text === 'string'
+                    ? text.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim()
+                    : ''
             }))
             .filter(v => v.verse >= minVerse && v.verse <= maxVerse && v.text.length > 0);
 
-        if (!validVerses.length) return null;
+        if (!validVerses.length) return fallback;
 
         const picked = validVerses[Math.floor(Math.random() * validVerses.length)];
-
         return {
             hebrewRef: `${range.hebrewBook} ${toHebrewNumber(chapter)}:${toHebrewNumber(picked.verse)}`,
             text: picked.text
         };
     } catch (e) {
-        console.error("Pasuk error:", e);
-        return null;
+        console.error('Pasuk error:', e);
+        return fallback;
     }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   CENTER CLOCK COMPONENT  — grande montre analogique au centre
+───────────────────────────────────────────────────────────────── */
+function CenterClock({ curTime, nextZman, countdownData }) {
+    const canvasRef = useRef(null);
+    const initialized = useRef(false);
+
+    useEffect(() => {
+        if (initialized.current) return;
+
+        const timer = setTimeout(() => {
+            if (window.initSuisseClock && canvasRef.current) {
+                const size = Math.round(Math.min(
+                    window.innerHeight * 0.78,
+                    window.innerWidth * 0.55
+                ));
+
+                window.initSuisseClock('center-clock-canvas', size);
+                initialized.current = true;
+            }
+        }, 100);
+
+        return () => clearTimeout(timer);
+    }, []);
+
+    return (
+        <div className="w-full h-full flex items-center justify-center gap-12 px-8" style={{ direction: 'ltr' }}>
+
+            {/* COLONNE GAUCHE : NEXT ZMAN / COUNTDOWN */}
+            <div className="flex flex-col items-center justify-center shrink-0" style={{ width: '420px' }}>
+
+                {!countdownData && nextZman ? (
+                    <div className="text-center">
+                        <div className="text-white/40 text-3xl md:text-5xl font-black tracking-wide">
+                            {nextZman.label}
+                        </div>
+
+                        <div className="text-yellow-400 digital-font text-5xl md:text-7xl font-black mt-2">
+                            {nextZman.time.slice(0, 5)}
+                        </div>
+                    </div>
+                ) : null}
+
+                {countdownData && !countdownData.isProgressBar ? (
+                    <div className={`font-black text-center animate-pulse ${countdownData.colorClass}`}>
+                        <div className="text-5xl md:text-7xl mb-4">
+                            {nextZman?.label}
+                        </div>
+
+                        <div className="text-4xl md:text-5xl text-white mb-4">
+                            בעוד
+                        </div>
+
+                        <div className="digital-font text-7xl md:text-[8rem]">
+                            {countdownData.timeString}
+                        </div>
+                    </div>
+                ) : null}
+
+                {countdownData && countdownData.isProgressBar ? (
+                    <div className="text-center animate-pulse">
+                        <div className="text-blue-400 text-5xl md:text-7xl font-black">
+                            {countdownData.label}
+                        </div>
+
+                        <div className="text-blue-300 text-3xl md:text-5xl font-black mt-4">
+                            זמן הגיע
+                        </div>
+                    </div>
+                ) : null}
+
+            </div>
+
+            {/* COLONNE DROITE : MONTRE SEULE */}
+            <div className="flex flex-col items-center justify-center">
+                <canvas
+                    id="center-clock-canvas"
+                    ref={canvasRef}
+                    style={{ display: 'block' }}
+                />
+            </div>
+
+        </div>
+    );
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -452,7 +520,6 @@ async function fetchRandomPasukForParasha(parashaTitle) {
 ───────────────────────────────────────────────────────────────── */
 
 function App() {
-    // ── State ──────────────────────────────────────────────────────
     const [now,          setNow]          = useState(new Date());
     const [data,         setData]         = useState(null);
     const [zmanim,       setZmanim]       = useState([]);
@@ -469,8 +536,8 @@ function App() {
     const [visibleIds, setVisibleIds] = useState(() => {
         const saved = localStorage.getItem('visibleZmanim_v4');
         return saved ? JSON.parse(saved) : [
-            'alot', 'sunrise', 'shema', 'tefillah', 'chatzot',
-            'mincha_g', 'plag', 'shkia', 'tzeit', 'chatzot_l'
+            'alot','sunrise','shema','tefillah','chatzot',
+            'mincha_g','plag','shkia','tzeit','chatzot_l'
         ];
     });
 
@@ -479,30 +546,19 @@ function App() {
         return saved ? JSON.parse(saved) : [];
     });
 
-    // ── Persist to localStorage ────────────────────────────────────
-    useEffect(() => {
-        localStorage.setItem('visibleZmanim_v4', JSON.stringify(visibleIds));
-    }, [visibleIds]);
+    useEffect(() => { localStorage.setItem('visibleZmanim_v4', JSON.stringify(visibleIds)); }, [visibleIds]);
+    useEffect(() => { localStorage.setItem('zmanReminders_v4', JSON.stringify(reminders)); }, [reminders]);
+    useEffect(() => { localStorage.setItem('selectedCity_v1', selectedCity); }, [selectedCity]);
 
-    useEffect(() => {
-        localStorage.setItem('zmanReminders_v4', JSON.stringify(reminders));
-    }, [reminders]);
-
-    useEffect(() => {
-        localStorage.setItem('selectedCity_v1', selectedCity);
-    }, [selectedCity]);
-
-    // ── Fetch zmanim + data ────────────────────────────────────────
     const fetchData = useCallback(async () => {
         try {
             setLoading(true);
-
             const coords = CITIES[selectedCity];
             if (!coords) { setLoading(false); return; }
 
-            const nowLocal   = new Date();
-            const civilDate  = new Date(nowLocal);
-            const civilIso   = getLocalISODate(civilDate);
+            const nowLocal     = new Date();
+            const civilDate    = new Date(nowLocal);
+            const civilIso     = getLocalISODate(civilDate);
             const tomorrowDate = addDays(civilDate, 1);
             const tomorrowIso  = getLocalISODate(tomorrowDate);
 
@@ -517,10 +573,10 @@ function App() {
             const dusk    = parseTime(solar.dusk,    civilDate);
             const noon    = parseTime(solar.solar_noon, civilDate);
 
-            const shaah       = (sunset.getTime() - sunrise.getTime()) / 12;
+            const shaah        = (sunset.getTime() - sunrise.getTime()) / 12;
             const chatzotLaila = new Date(noon.getTime() + 12 * 60 * 60 * 1000);
 
-            const isAfterTzeit = nowLocal >= dusk;
+            const isAfterTzeit  = nowLocal >= dusk;
             const effectiveDate = isAfterTzeit ? tomorrowDate : civilDate;
             const effectiveIso  = isAfterTzeit ? tomorrowIso  : civilIso;
 
@@ -534,60 +590,48 @@ function App() {
 
             const [hebDateRes, dailyRes, weatherRes] = await Promise.all([
                 fetch(`https://www.hebcal.com/converter?cfg=json&gy=${y}&gm=${m}&gd=${d}&g2h=1`).then(r => r.json()),
-				fetch(`https://www.hebcal.com/hebcal?v=1&cfg=json&maj=on&min=on&mod=on&nx=on&start=${civilIso}&end=${satIso}&ss=on&mf=on&c=off&geo=none&F=on&heb=on&s=on&o=on&i=on`).then(r => r.json()),
-				fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lng}&hourly=temperature_2m,weather_code&timezone=auto&forecast_days=3`).then(r => r.json())
+                fetch(`https://www.hebcal.com/hebcal?v=1&cfg=json&maj=on&min=on&mod=on&nx=on&start=${civilIso}&end=${satIso}&ss=on&mf=on&c=off&geo=none&F=on&heb=on&s=on&o=on&i=on`).then(r => r.json()),
+                fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lng}&hourly=temperature_2m,weather_code&timezone=auto&forecast_days=3`).then(r => r.json())
             ]);
 
             setWeather(getWeatherForecast(weatherRes));
 
             const items = dailyRes.items || [];
-
-            const daf = items.find(i => i.category === 'dafyomi' && i.date === effectiveIso)?.hebrew || "---";
+            const daf   = items.find(i => i.category === 'dafyomi' && i.date === effectiveIso)?.hebrew || "---";
 
             const parashaEvent = items.find(i => i.category === 'parashat' && i.date === satIso);
-            const parashaHeb   = parashaEvent ? parashaEvent.hebrew.replace('פרשת ', '') : "---";
+            const parashaHeb   = parashaEvent ? parashaEvent.hebrew.replace('פרשת ','') : "---";
             const parashaTitle = parashaEvent ? parashaEvent.title : null;
 
             const specialEvents = items.filter(i =>
-                (i.category === 'holiday' || i.category === 'roshchodesh') &&
-                i.date === effectiveIso
+                (i.category === 'holiday' || i.category === 'roshchodesh') && i.date === effectiveIso
             );
-
             const holidayInfo = specialEvents.map(e => ({
                 text: e.hebrew,
-                isFast:
-                    e.subcat === 'fast' ||
-                    e.title?.toLowerCase().includes('fast') ||
-                    e.hebrew?.includes('צום') ||
-                    e.hebrew?.includes('תענית')
+                isFast: e.subcat === 'fast' || e.title?.toLowerCase().includes('fast') || e.hebrew?.includes('צום') || e.hebrew?.includes('תענית')
             }));
 
             const omerItem = items.find(i => i.category === 'omer' && i.date === effectiveIso) || null;
             const omer     = omerItem?.omer?.count?.he || null;
 
             const list = [
-                { id: 'alot',     label: 'עלות השחר',     fullTime: dawn,                                                       time: formatTime(dawn) },
-                { id: 'sunrise',  label: 'נץ החמה',        fullTime: sunrise,                                                    time: formatTime(sunrise) },
-                { id: 'shema',    label: 'סוף זמן שמע',    fullTime: new Date(sunrise.getTime() + 3    * shaah),                 time: formatTime(new Date(sunrise.getTime() + 3    * shaah)) },
-                { id: 'tefillah', label: 'סוף זמן תפילה',  fullTime: new Date(sunrise.getTime() + 4    * shaah),                 time: formatTime(new Date(sunrise.getTime() + 4    * shaah)) },
-                { id: 'chatzot',  label: 'חצות היום',      fullTime: noon,                                                       time: formatTime(noon) },
-                { id: 'mincha_g', label: 'מנחה גדולה',     fullTime: new Date(noon.getTime()    + 0.5  * shaah),                 time: formatTime(new Date(noon.getTime()    + 0.5  * shaah)) },
-                { id: 'plag',     label: 'פלג המנחה',      fullTime: new Date(sunrise.getTime() + 10.75 * shaah),                time: formatTime(new Date(sunrise.getTime() + 10.75 * shaah)) },
-                { id: 'shkia',    label: 'שקיעה',           fullTime: sunset,                                                     time: formatTime(sunset) },
-                { id: 'tzeit',    label: 'צאת הכוכבים',    fullTime: dusk,                                                       time: formatTime(dusk) },
-                { id: 'chatzot_l',label: 'חצות לילה',      fullTime: chatzotLaila,                                               time: formatTime(chatzotLaila) }
+                { id:'alot',     label:'עלות השחר',    fullTime: dawn,                                                    time: formatTime(dawn) },
+                { id:'sunrise',  label:'נץ החמה',       fullTime: sunrise,                                                 time: formatTime(sunrise) },
+                { id:'shema',    label:'סוף זמן שמע',   fullTime: new Date(sunrise.getTime() + 3     * shaah),             time: formatTime(new Date(sunrise.getTime() + 3     * shaah)) },
+                { id:'tefillah', label:'סוף זמן תפילה', fullTime: new Date(sunrise.getTime() + 4     * shaah),             time: formatTime(new Date(sunrise.getTime() + 4     * shaah)) },
+                { id:'chatzot',  label:'חצות היום',     fullTime: noon,                                                    time: formatTime(noon) },
+                { id:'mincha_g', label:'מנחה גדולה',    fullTime: new Date(noon.getTime()    + 0.5   * shaah),             time: formatTime(new Date(noon.getTime()    + 0.5   * shaah)) },
+                { id:'plag',     label:'פלג המנחה',     fullTime: new Date(sunrise.getTime() + 10.75 * shaah),             time: formatTime(new Date(sunrise.getTime() + 10.75 * shaah)) },
+                { id:'shkia',    label:'שקיעה',          fullTime: sunset,                                                  time: formatTime(sunset) },
+                { id:'tzeit',    label:'צאת הכוכבים',   fullTime: dusk,                                                    time: formatTime(dusk) },
+                { id:'chatzot_l',label:'חצות לילה',     fullTime: chatzotLaila,                                            time: formatTime(chatzotLaila) }
             ];
 
             setData({
-                hebrewDate:   hebDateRes.hebrew,
-                gregorianDate:`${String(effectiveDate.getDate()).padStart(2,'0')}.${String(effectiveDate.getMonth()+1).padStart(2,'0')}.${effectiveDate.getFullYear()}`,
-                daf,
-                parashaHeb,
-                parashaTitle,
-                holidays: holidayInfo,
-                omer
+                hebrewDate:    hebDateRes.hebrew,
+                gregorianDate: `${String(effectiveDate.getDate()).padStart(2,'0')}.${String(effectiveDate.getMonth()+1).padStart(2,'0')}.${effectiveDate.getFullYear()}`,
+                daf, parashaHeb, parashaTitle, holidays: holidayInfo, omer
             });
-
             setZmanim(list);
             setLoading(false);
         } catch (e) {
@@ -596,14 +640,12 @@ function App() {
         }
     }, [selectedCity]);
 
-    // ── Fetch pasuk ────────────────────────────────────────────────
     const refreshPasuk = useCallback(async (parashaTitle) => {
         if (!parashaTitle) { setRandomPasuk(null); return; }
         const pasuk = await fetchRandomPasukForParasha(parashaTitle);
         setRandomPasuk(pasuk);
     }, []);
 
-    // ── Effects ────────────────────────────────────────────────────
     useEffect(() => { fetchData(); }, [fetchData]);
 
     useEffect(() => {
@@ -613,7 +655,6 @@ function App() {
         return () => clearInterval(interval);
     }, [data?.parashaTitle, refreshPasuk]);
 
-    // Refetch after tzeit (new halachic day)
     useEffect(() => {
         if (!zmanim.length) return;
         const tzeitZman = zmanim.find(z => z.id === 'tzeit');
@@ -624,34 +665,28 @@ function App() {
         return () => clearTimeout(timer);
     }, [zmanim, fetchData]);
 
-    // Clock tick
     useEffect(() => {
         const timer = setInterval(() => setNow(new Date()), 1000);
         return () => clearInterval(timer);
     }, []);
 
-    // Midnight refetch
     useEffect(() => {
         let lastCheckedDate = new Date().toDateString();
         const dayCheckTimer = setInterval(() => {
             const currentDate = new Date().toDateString();
-            if (currentDate !== lastCheckedDate) {
-                lastCheckedDate = currentDate;
-                fetchData();
-            }
+            if (currentDate !== lastCheckedDate) { lastCheckedDate = currentDate; fetchData(); }
         }, 60000);
         return () => clearInterval(dayCheckTimer);
     }, [fetchData]);
 
-    // ── Derived values ─────────────────────────────────────────────
     const nextZman = useMemo(() => {
         if (!zmanim.length) return null;
-        const sorted = [...zmanim].sort((a, b) => a.fullTime - b.fullTime);
+        const sorted = [...zmanim].sort((a,b) => a.fullTime - b.fullTime);
         return sorted.find(z => z.fullTime > now) || sorted[0];
     }, [zmanim, now]);
 
     const activeZman = useMemo(() => {
-        const sorted = [...zmanim].sort((a, b) => a.fullTime - b.fullTime);
+        const sorted = [...zmanim].sort((a,b) => a.fullTime - b.fullTime);
         return sorted.find(z => {
             const diff = now.getTime() - z.fullTime.getTime();
             return diff > 0 && diff <= 30000;
@@ -659,26 +694,16 @@ function App() {
     }, [zmanim, now]);
 
     const countdownData = useMemo(() => {
-        if (activeZman) {
-            return {
-                isProgressBar: true,
-                colorClass: "text-blue-500 glow-blue",
-                label: activeZman.label,
-                time: activeZman.time
-            };
-        }
+        if (activeZman) return { isProgressBar: true, colorClass: "text-blue-500 glow-blue", label: activeZman.label, time: activeZman.time };
         if (!nextZman) return null;
-
         const diff = nextZman.fullTime.getTime() - now.getTime();
         if (diff > 0 && diff <= 1800000) {
             const m = Math.floor(diff / 60000);
             const s = Math.floor((diff % 60000) / 1000);
-            const timeString = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-
+            const timeString = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
             let colorClass = "text-green-500 glow-green";
-            if (diff <= 60000)  colorClass = "text-red-600 glow-red";
+            if (diff <= 60000)       colorClass = "text-red-600 glow-red";
             else if (diff <= 300000) colorClass = "text-orange-500 glow-orange";
-
             return { timeString, colorClass, isProgressBar: false };
         }
         return null;
@@ -686,122 +711,43 @@ function App() {
 
     const visibleZmanim = zmanim
         .filter(z => visibleIds.includes(z.id))
-        .sort((a, b) => a.fullTime - b.fullTime);
+        .sort((a,b) => a.fullTime - b.fullTime);
 
     const curTime = formatTime(now);
 
-    // ── Loading screen ─────────────────────────────────────────────
     if (loading) {
         return (
             <div className="h-screen flex items-center justify-center bg-black">
-                <div className="text-yellow-400 font-bold text-2xl animate-pulse digital-font tracking-[0.5em]">
-                    LOADING...
-                </div>
+                <div className="text-yellow-400 font-bold text-2xl animate-pulse digital-font tracking-[0.5em]">LOADING...</div>
             </div>
         );
     }
 
-    /* ── Render ─────────────────────────────────────────────────── */
     return (
         <div className="h-screen flex flex-col justify-between px-6 py-3 overflow-hidden bg-black text-white">
-
-            {/* ── HEADER ── */}
-            <header className="w-full border-b border-white/10 pb-4 pt-3 shrink-0">
+            {/* ── HEADER : informations réparties gauche / centre / droite ── */}
+            <header className="w-full border-b border-white/10 pb-2 pt-2 shrink-0 relative z-10">
                 <div className="header-grid">
 
-                    {/* Daf Yomi */}
-                    <div className="header-card shrink-0">
-                        <div className="text-white/30 text-base uppercase tracking-widest mb-1">דף היומי</div>
-                        <div className="text-green-400 text-2xl md:text-3xl font-black whitespace-nowrap overflow-hidden text-ellipsis">
-                            {data?.daf || "---"}
-                        </div>
-                    </div>
-
-                    {/* Hebrew + Gregorian date */}
-                    <div className="header-card">
-                        <div className="text-sky-100 text-2xl md:text-3xl font-black whitespace-nowrap overflow-hidden text-ellipsis mb-1">
-                            {data?.hebrewDate || "---"}
-                        </div>
-                        <div className="text-white/40 text-lg md:text-2xl digital-font font-bold tracking-wider">
-                            {data?.gregorianDate || "---"}
-                        </div>
-                    </div>
-
-                    {/* Clock */}     
-					<div className="header-card shrink-0">
-                        <div className="text-white/30 text-base uppercase tracking-widest mb-1">{CITIES[selectedCity].name}</div>
-                        <div className="text-yellow-400 text-2xl md:text-7xl font-black whitespace-nowrap overflow-hidden text-ellipsis">
-                            {curTime}
-                        </div>
-                    </div>
-
-                    {/* City + Weather */}
-                    <div className="header-card">
-
-                        {weather?.weather7h && weather?.weather12h && (
-                            <div className="flex gap-3 items-center justify-center">
-                                <div className="text-center">
-                                    <div className="text-cyan-400 text-3xl md:text-4xl font-black">
-                                        {weather.weather7h.temp}°
-                                    </div>
-                                    <div className="text-cyan-300/60 text-sm md:text-base font-bold">
-                                        {getWeatherDesc(weather.weather7h.code)}
-                                    </div>
-                                </div>
-                                <div className="text-white/20 text-lg"></div>
-                                <div className="text-center">
-                                    <div className="text-orange-400 text-3xl md:text-4xl font-black">
-                                        {weather.weather12h.temp}°
-                                    </div>
-                                    <div className="text-orange-300/60 text-sm md:text-base font-bold">
-                                        {getWeatherDesc(weather.weather12h.code)}
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-						
-						    {/* ← NOUVEAU : forecast J+1 / J+2 */}
-						{weather?.forecast?.length > 0 && (
-							<div className="border-t border-white/10 mt-2 pt-2 flex flex-col gap-1">
-								{weather.forecast.map(({ date, slots }) => (
-									<div key={date} className="flex items-center gap-1">
-										<span className="text-white/30 text-xs font-black w-5 shrink-0">
-											{date.slice(8)}
-										</span>
-										{slots.map((slot, i) => slot ? (
-											<div key={i} className="flex-1 text-center">
-												<div className="text-white/20 text-[9px] font-bold">{slot.label}</div>
-												<div className="text-white/80 text-xs font-black">{slot.temp}°</div>
-											</div>
-										) : (
-											<div key={i} className="flex-1 text-center text-white/10 text-xs">—</div>
-										))}
-									</div>
-								))}
-							</div>
-						)}
-                    </div>
-
-                    {/* Parasha + holidays + Omer + Pasuk */}
-                    <div className="header-card">
+                    {/* Bloc gauche large : Parasha + Omer + Pasuk aléatoire */}
+                    <div className="header-card parasha-card">
                         <div className="flex items-start justify-between gap-4">
                             <div className="min-w-0 flex-1">
-                                <div className="text-sky-100 text-2xl md:text-3xl font-black whitespace-nowrap overflow-hidden text-ellipsis mb-1">
+                                <div className="header-title-line text-sky-100 text-2xl md:text-3xl font-black mb-1">
                                     {HEBREW_DAYS[now.getDay()]} -{" "}
-                                    <span className="text-sky-400 text-3xl md:text-4xl font-black leading-none mb-2 truncate">
+                                    <span className="text-sky-400 text-3xl md:text-4xl font-black leading-none">
                                         {data?.parashaHeb || "---"}
                                     </span>
                                 </div>
                             </div>
+
                             {data?.holidays?.length > 0 && (
                                 <div className="flex flex-col items-end gap-1 shrink-0">
                                     {data.holidays.map((h, i) => (
                                         <div
                                             key={i}
                                             className={`text-sm font-black px-3 py-1 rounded-full whitespace-nowrap ${
-                                                h.isFast
-                                                    ? 'bg-red-500/20 text-red-400'
-                                                    : 'bg-yellow-400/20 text-yellow-300'
+                                                h.isFast ? 'bg-red-500/20 text-red-400' : 'bg-yellow-400/20 text-yellow-300'
                                             }`}
                                         >
                                             {h.text}
@@ -811,98 +757,81 @@ function App() {
                             )}
                         </div>
 
-                        {/* Omer */}
+                        {/* Omer : affiché seulement pendant la période du Omer */}
                         {data?.omer && (
                             <div className="omer-ticker mb-1">
                                 <div className="omer-track">
-                                    <div className="omer-item text-purple-400 text-base md:text-xl font-black">
-                                        {data.omer}
-                                    </div>
-                                    <div className="omer-item text-purple-400 text-base md:text-xl font-black" aria-hidden="true">
-                                        {data.omer}
-                                    </div>
+                                    <div className="omer-item text-purple-400 text-base md:text-xl font-black">{data.omer}</div>
+                                    <div className="omer-item text-purple-400 text-base md:text-xl font-black" aria-hidden="true">{data.omer}</div>
                                 </div>
                             </div>
                         )}
 
-                        {/* Pasuk */}
-                        {randomPasuk && (
-                            <div className="pasuk-ticker" title={`${randomPasuk.hebrewRef} — ${randomPasuk.text}`}>
-                                <div className="pasuk-track">
-                                    <div className="pasuk-item pasuk-text">
-                                        <span className="pasuk-ref">{randomPasuk.hebrewRef}</span>
-                                        <span>—</span>
-                                        <span className="mr-2">{randomPasuk.text}</span>
-                                    </div>
-                                    <div className="pasuk-item pasuk-text" aria-hidden="true">
-                                        <span className="pasuk-ref">{randomPasuk.hebrewRef}</span>
-                                        <span>—</span>
-                                        <span className="mr-2">{randomPasuk.text}</span>
-                                    </div>
+                        {/* Pasuk : toujours visible. Si l'API échoue, randomPasuk reçoit un fallback. */}
+                        <div className="pasuk-ticker" title={`${randomPasuk?.hebrewRef || 'פסוק'} — ${randomPasuk?.text || 'טעינה...'}`}>
+                            <div className="pasuk-track">
+                                <div className="pasuk-item pasuk-text">
+                                    <span className="pasuk-ref">{randomPasuk?.hebrewRef || 'פסוק'}</span>
+                                    <span>—</span>
+                                    <span className="mr-2">{randomPasuk?.text || 'טעינת פסוק אקראי...'}</span>
+                                </div>
+                                <div className="pasuk-item pasuk-text" aria-hidden="true">
+                                    <span className="pasuk-ref">{randomPasuk?.hebrewRef || 'פסוק'}</span>
+                                    <span>—</span>
+                                    <span className="mr-2">{randomPasuk?.text || 'טעינת פסוק אקראי...'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Bloc gauche secondaire : météo courte */}
+                    <div className="header-card">
+                        {weather?.weather7h && weather?.weather12h && (
+                            <div className="flex gap-3 items-center justify-center h-full">
+                                <div className="text-center">
+                                    <div className="text-cyan-400 text-3xl md:text-4xl font-black">{weather.weather7h.temp}°</div>
+                                    <div className="text-cyan-300/60 text-sm md:text-base font-bold">{getWeatherDesc(weather.weather7h.code)}</div>
+                                </div>
+                                <div className="text-center">
+                                    <div className="text-orange-400 text-3xl md:text-4xl font-black">{weather.weather12h.temp}°</div>
+                                    <div className="text-orange-300/60 text-sm md:text-base font-bold">{getWeatherDesc(weather.weather12h.code)}</div>
                                 </div>
                             </div>
                         )}
+                    </div>
+
+                    {/* Centre volontairement vide : réserve visuelle pour la grande montre */}
+                    <div className="header-spacer"></div>
+
+                    {/* Bloc droite : date hébraïque + date civile */}
+                    <div className="header-card">
+                        <div className="text-sky-100 text-2xl md:text-3xl font-black whitespace-nowrap overflow-hidden text-ellipsis mb-1">
+                            {data?.hebrewDate || "---"}
+                        </div>
+                        <div className="text-white/40 text-lg md:text-2xl digital-font font-bold tracking-wider">
+                            {data?.gregorianDate || "---"}
+                        </div>
+                    </div>
+
+                    {/* Bloc droite extrême : Daf Yomi */}
+                    <div className="header-card shrink-0">
+                        <div className="text-white/30 text-base uppercase tracking-widest mb-1">דף היומי</div>
+                        <div className="text-green-400 text-2xl md:text-3xl font-black whitespace-nowrap overflow-hidden text-ellipsis">
+                            {data?.daf || "---"}
+                        </div>
                     </div>
 
                 </div>
             </header>
 
-            {/* ── MAIN COUNTDOWN ── */}
-            <main className="flex-grow flex flex-col items-center justify-center relative min-h-0">
-                {countdownData ? (
-                    <div className="flex flex-col items-center w-full max-w-6xl">
-                        {countdownData.isProgressBar ? (
-                            <>
-                                <div className="text-blue-500 text-3xl md:text-5xl font-black uppercase tracking-[0.4em] mb-6 animate-pulse">
-                                    {countdownData.label} - זמן הגיע
-                                </div>
-                                <div className="text-[8rem] md:text-[16rem] leading-none digital-font font-black text-blue-400 mb-8">
-                                    {countdownData.time.slice(0, 5)}
-                                </div>
-                                <div className="w-full bg-white/10 rounded-full h-8 md:h-12 overflow-hidden border-2 border-blue-500 shadow-lg shadow-blue-500/50">
-                                    <div className="progress-animation h-full bg-gradient-to-r from-blue-600 via-blue-400 to-blue-300 shadow-lg"></div>
-                                </div>
-                            </>
-                        ) : (
-                            <>
-                                <div className={`${countdownData.colorClass.split(' ')[0]} text-3xl md:text-5xl font-black uppercase tracking-[0.4em] mb-6 animate-pulse`}>
-                                    {nextZman?.label} בעוד
-                                </div>
-                                <div className={`text-[10rem] md:text-[18rem] leading-none digital-font font-black ${countdownData.colorClass}`}>
-                                    {countdownData.timeString}
-                                </div>
-                                <div className="mt-8 text-2xl md:text-5xl text-white/10 digital-font font-bold uppercase tracking-[0.5em]">
-                                    HORAIRE: {curTime}
-                                </div>
-                            </>
-                        )}
-                    </div>
-                ) : (
-                    <div className="text-center">
-                        {nextZman && (
-                            <div className="mb-8 md:mb-16">
-                                <div className="text-white/20 uppercase tracking-[0.5em] text-[10px] md:text-xs font-bold mb-3">
-                                    Prochain horaire
-                                </div>
-								{/*NEXT ZMAN*/}
-                                <div className="text-6xl md:text-8xl font-black text-white glow-text">
-                                    {nextZman.label} - <span className="text-6xl md:text-8xl text-yellow-400 mt-2 md:mt-4 digital-font font-black">{nextZman.time.slice(0, 5)}</span>
-								</div>
-                            </div>
-                        )}
-                        <div className="text-yellow-400/20 text-[10px] md:text-sm font-bold tracking-[1em] mb-4 uppercase">
-                            Horloge Actuelle
-                        </div>
-                        <h1 className="text-[9rem] md:text-[17rem] leading-none font-black digital-font text-white glow-text tracking-tighter">
-                            {curTime.slice(0, 5)}
-                        </h1>
-                    </div>
-                )}
-            </main>
+            {/* ── MAIN : grande montre analogique ── */}
+			<main className="flex-grow flex items-center justify-center relative min-h-0 overflow-visible pt-0 -mt-10 z-20">
+				<CenterClock curTime={curTime} nextZman={nextZman} countdownData={countdownData} />
+			</main>
 
             {/* ── FOOTER: ZMANIM STRIP ── */}
-            <footer className="w-full footer-gradient backdrop-blur-lg rounded-3xl py-4 border border-white/10 shadow-2xl shrink-0">
-                <div className="flex flex-row-reverse flex-wrap gap-1 md:gap-2 justify-center px-2">
+            <footer className="w-full footer-gradient backdrop-blur-lg rounded-2xl py-1 border border-white/10 shadow-2xl shrink-0">
+                <div className="flex flex-row-reverse flex-wrap gap-[2px] justify-center px-1">
                     {visibleZmanim.map(z => {
                         const isActive    = nextZman?.id === z.id;
                         const hasReminder = reminders.includes(z.id);
@@ -910,104 +839,61 @@ function App() {
                             <div
                                 key={z.id}
                                 onClick={() => setReminders(prev =>
-                                    prev.includes(z.id)
-                                        ? prev.filter(i => i !== z.id)
-                                        : [...prev, z.id]
+                                    prev.includes(z.id) ? prev.filter(i => i !== z.id) : [...prev, z.id]
                                 )}
-                                className={`zman-card rounded-xl px-2 py-2 md:px-3 md:py-3 flex flex-col items-center min-w-[80px] md:min-w-[110px] flex-grow md:flex-grow-0 transition-all ${isActive ? 'active-zman' : ''} ${z.fullTime < now ? 'opacity-50' : ''}`}
+                                className={`zman-card rounded-lg px-2 py-1 flex flex-col items-center min-w-[72px] md:min-w-[110px] flex-grow md:flex-grow-0 transition-all ${isActive ? 'active-zman' : ''} ${z.fullTime < now ? 'opacity-50' : ''}`}
                             >
                                 {hasReminder && <i className="fa-solid fa-bell reminder-icon"></i>}
-                                <span className="text-[10px] md:text-[16px] text-white/40 font-black mb-1 whitespace-nowrap uppercase tracking-tighter">
-                                    {z.label}
-                                </span>
+                                <span className="text-[10px] md:text-[16px] text-white font-black mb-1 whitespace-nowrap uppercase tracking-tighter">{z.label}</span>
                                 <span className={`text-lg md:text-2xl digital-font font-bold tracking-tight ${isActive ? 'text-yellow-400' : 'text-white'}`}>
-                                    {z.time.slice(0, 5)}
+                                    {z.time.slice(0,5)}
                                 </span>
                             </div>
                         );
                     })}
                 </div>
-                <div className="text-center text-[7px] md:text-[9px] text-white/10 uppercase tracking-[0.6em] mt-2 font-bold">
+                <div className="hidden text-white/10 uppercase tracking-[0.6em] mt-2 font-bold">
                     {CITIES[selectedCity].name} Dashboard • Method Gra • GPS: {CITIES[selectedCity].lat}, {CITIES[selectedCity].lng}
                 </div>
             </footer>
 
             {/* ── SETTINGS MODAL ── */}
             {showSettings && (
-                <div
-                    className="fixed inset-0 modal-overlay z-50 flex items-center justify-center p-6"
-                    onClick={() => setShowSettings(false)}
-                >
+                <div className="fixed inset-0 modal-overlay z-50 flex items-center justify-center p-6" onClick={() => setShowSettings(false)}>
                     <div
                         className="bg-[#0a0a0a] border-2 border-white/20 rounded-[3rem] p-10 max-w-3xl w-full shadow-[0_0_100px_rgba(251,206,7,0.2)] max-h-[90vh] overflow-y-auto no-scrollbar"
                         onClick={e => e.stopPropagation()}
                     >
                         <h2 className="text-3xl font-black mb-8 text-yellow-400 text-center uppercase tracking-widest border-b-2 border-white/10 pb-4">
-                            <i className="fa-solid fa-sliders mr-3"></i>
-                            Configuration
+                            <i className="fa-solid fa-sliders mr-3"></i>Configuration
                         </h2>
-
-                        {/* City selector */}
                         <div className="mb-8">
-                            <h3 className="text-xl font-black text-sky-400 mb-4 text-center">
-                                <i className="fa-solid fa-location-dot ml-2"></i>
-                                בחר עיר
-                            </h3>
+                            <h3 className="text-xl font-black text-sky-400 mb-4 text-center"><i className="fa-solid fa-location-dot ml-2"></i>בחר עיר</h3>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                 {Object.entries(CITIES).map(([key, city]) => (
-                                    <button
-                                        key={key}
-                                        onClick={() => setSelectedCity(key)}
-                                        className={`p-4 rounded-xl font-bold text-lg transition-all ${
-                                            selectedCity === key
-                                                ? 'bg-sky-500 text-white border-2 border-sky-300 shadow-lg shadow-sky-500/50'
-                                                : 'bg-white/5 text-white/60 border border-white/10 hover:bg-white/10'
-                                        }`}
-                                    >
+                                    <button key={key} onClick={() => setSelectedCity(key)}
+                                        className={`p-4 rounded-xl font-bold text-lg transition-all ${selectedCity === key ? 'bg-sky-500 text-white border-2 border-sky-300 shadow-lg shadow-sky-500/50' : 'bg-white/5 text-white/60 border border-white/10 hover:bg-white/10'}`}>
                                         {city.name}
                                     </button>
                                 ))}
                             </div>
                         </div>
-
-                        {/* Zmanim visibility */}
                         <div>
-                            <h3 className="text-xl font-black text-yellow-400 mb-4 text-center">
-                                <i className="fa-solid fa-clock ml-2"></i>
-                                זמנים להצגה
-                            </h3>
+                            <h3 className="text-xl font-black text-yellow-400 mb-4 text-center"><i className="fa-solid fa-clock ml-2"></i>זמנים להצגה</h3>
                             <div className="grid grid-cols-2 gap-4">
                                 {zmanim.map(z => (
-                                    <label
-                                        key={z.id}
-                                        className={`flex items-center justify-between gap-4 p-5 rounded-2xl cursor-pointer transition-all ${
-                                            visibleIds.includes(z.id)
-                                                ? 'bg-white/10 border-2 border-white/20'
-                                                : 'bg-white/5 border border-transparent opacity-50'
-                                        }`}
-                                    >
-                                        <span className="text-lg font-bold">{z.label}</span>
-                                        <input
-                                            type="checkbox"
-                                            checked={visibleIds.includes(z.id)}
-                                            onChange={() => setVisibleIds(prev =>
-                                                prev.includes(z.id)
-                                                    ? prev.filter(i => i !== z.id)
-                                                    : [...prev, z.id]
-                                            )}
-                                            className="w-6 h-6 accent-yellow-400 rounded-lg cursor-pointer"
-                                        />
+                                    <label key={z.id} className={`flex items-center justify-between gap-4 p-5 rounded-2xl cursor-pointer transition-all ${visibleIds.includes(z.id) ? 'bg-white/10 border-2 border-white/20' : 'bg-white/5 border border-transparent opacity-50'}`}>
+                                        <span className="text-base md:text-lg font-bold">{z.label}</span>
+                                        <input type="checkbox" checked={visibleIds.includes(z.id)}
+                                            onChange={() => setVisibleIds(prev => prev.includes(z.id) ? prev.filter(i => i !== z.id) : [...prev, z.id])}
+                                            className="w-6 h-6 accent-yellow-400 rounded-lg cursor-pointer" />
                                     </label>
                                 ))}
                             </div>
                         </div>
-
-                        <button
-                            onClick={() => setShowSettings(false)}
-                            className="mt-8 w-full bg-yellow-400 text-black py-4 rounded-2xl font-black text-xl hover:bg-yellow-300 transition-all uppercase shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/50"
-                        >
-                            <i className="fa-solid fa-check mr-2"></i>
-                            Valider et Fermer
+                        <button onClick={() => setShowSettings(false)}
+                            className="mt-8 w-full bg-yellow-400 text-black py-4 rounded-2xl font-black text-xl hover:bg-yellow-300 transition-all uppercase shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/50">
+                            <i className="fa-solid fa-check mr-2"></i>Valider et Fermer
                         </button>
                     </div>
                 </div>
@@ -1016,10 +902,6 @@ function App() {
         </div>
     );
 }
-
-/* ─────────────────────────────────────────────────────────────────
-   MOUNT
-───────────────────────────────────────────────────────────────── */
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<App />);
