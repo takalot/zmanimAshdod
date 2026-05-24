@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zmanim Pro - Dashboard</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <!-- Montre suisse -->
+    <script src="suisseclock.js"></script>
+
+    <style>
+        /* ─── Base ─────────────────────────────────────────────── */
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            font-family: 'Heebo', sans-serif;
+            overflow: hidden;
+            margin: 0;
+            height: 100vh;
+        }
+
+        .digital-font { font-family: 'JetBrains Mono', monospace; }
+
+         /* ─── Header layout ───────────────────────────────────────
+           Structure: gauche = Parasha/Meteo, centre = espace libre pour la montre,
+           droite = Date/Daf. Le centre reste vide pour ne jamais compresser la montre. */
+        .header-grid {
+            display: grid;
+            grid-template-columns: minmax(520px, 1.55fr) 240px minmax(360px, 1fr) 300px;
+            gap: 12px;
+            align-items: stretch;
+            direction: ltr;
+        }
+
+        .header-spacer { min-width: 180px; }
+
+        .header-card{
+            background:rgba(255,255,255,0.03);
+            border:1px solid rgba(251,206,7,0.35);
+            border-radius:16px;
+            padding:0.50rem 0.95rem;
+            min-width:0;
+            overflow:hidden;
+            direction:rtl;
+            box-shadow:0 0 12px rgba(251,206,7,0.22),0 0 32px rgba(251,206,7,0.10);
+            backdrop-filter:blur(10px);
+        }
+
+        .parasha-card { overflow:hidden; min-height:112px; }
+        .header-title-line { min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+
+        @media (max-width: 1500px) {
+            .header-grid { grid-template-columns: minmax(460px, 1.45fr) 210px minmax(180px, .8fr) 250px 190px; gap:10px; }
+            .header-card { padding:0.42rem 0.75rem; }
+        }
+
+        /* ─── Zman cards ────────────────────────────────────────── */
+        .zman-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 0.2px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .zman-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .active-zman {
+            border: 2px solid #fbce07 !important;
+            background: rgba(251, 206, 7, 0.15) !important;
+            box-shadow: 0 0 20px rgba(251, 206, 7, 0.3);
+            transform: scale(1.03);
+            z-index: 10;
+        }
+
+        .reminder-icon {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            color: #fbce07;
+            font-size: 12px;
+            animation: bounce 2s infinite;
+        }
+
+
+        /* ─── Footer ────────────────────────────────────────────── */
+        .footer-gradient {
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.8), rgba(255, 255, 255, 0.05));
+        }
+
+        /* ─── Modal ─────────────────────────────────────────────── */
+        .modal-overlay {
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(8px);
+        }
+
+        /* ─── Glow effects ──────────────────────────────────────── */
+        .glow-text    { text-shadow: 0 0 30px rgba(251, 206, 7, 0.5); }
+        .glow-red     { text-shadow: 0 0 60px rgba(239, 68, 68, 1); }
+        .glow-orange  { text-shadow: 0 0 60px rgba(249, 115, 22, 1); }
+        .glow-green   { text-shadow: 0 0 60px rgba(34, 197, 94, 1); }
+        .glow-blue    { text-shadow: 0 0 60px rgba(59, 130, 246, 1); }
+        .parasha-glow { text-shadow: 0 0 25px rgba(56, 189, 248, 0.6); }
+
+        /* ─── Scrollbar ─────────────────────────────────────────── */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* ─── Animations ────────────────────────────────────────── */
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50%       { transform: translateY(-4px); }
+        }
+
+        @keyframes progress-bar {
+            0%   { width: 0%; }
+            100% { width: 100%; }
+        }
+
+        .progress-animation { animation: progress-bar 30s linear; }
+
+        /* ─── Omer ticker ───────────────────────────────────────── */
+        .omer-ticker {
+            width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            position: relative;
+            direction: ltr;
+            mask-image: linear-gradient(to right, transparent 0%, white 8%, white 92%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to right, transparent 0%, white 8%, white 92%, transparent 100%);
+        }
+
+        .omer-track {
+            display: inline-flex;
+            align-items: center;
+            width: max-content;
+            white-space: nowrap;
+            will-change: transform;
+            animation: omer-marquee 12s linear infinite;
+        }
+
+        .omer-track:hover { animation-play-state: paused; }
+
+        .omer-item {
+            display: inline-flex;
+            align-items: center;
+            flex-shrink: 0;
+            padding-right: 3rem;
+            direction: rtl;
+        }
+
+        @keyframes omer-marquee {
+            from { transform: translateX(-50%); }
+            to   { transform: translateX(0); }
+        }
+
+        /* ─── Pasuk ticker ────────────────────────────────────────
+           Important: le passouk est toujours rendu dans une zone avec hauteur minimale.
+           Si l'appel API échoue, le composant affiche un message de secours. */
+        .pasuk-ticker {
+            width: 100%;
+            min-height: 34px;
+            overflow: hidden;
+            white-space: nowrap;
+            position: relative;
+            margin-top: 0.25rem;
+            padding-top: 0.25rem;
+            display:flex;
+            align-items:center;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            direction: ltr;
+            mask-image: linear-gradient(to right, transparent 0%, white 6%, white 94%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to right, transparent 0%, white 6%, white 94%, transparent 100%);
+        }
+        .pasuk-track { display:inline-flex; align-items:center; white-space:nowrap; width:max-content; will-change:transform; animation:pasuk-marquee 12s linear infinite; }
+        .pasuk-track:hover { animation-play-state: paused; }
+        .pasuk-item { display:inline-flex; align-items:center; flex-shrink:0; padding-right:4rem; direction:rtl; }
+        .pasuk-text { font-family:'Heebo', Arial, sans-serif; font-size:0.92rem; line-height:1.25; font-weight:700; color:rgba(255,255,255,0.96); }
+        .pasuk-ref { color:#fbce07; white-space:nowrap; margin-left:0.6rem; font-weight:900; }
+        @keyframes pasuk-marquee { from { transform:translateX(-50%); } to { transform:translateX(0); } }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useMemo, useCallback } = React;
+
+/* ─────────────────────────────────────────────────────────────────
+   CONSTANTS
+───────────────────────────────────────────────────────────────── */
+
+const CITIES = {
+    ashdod:     { name: 'אשדוד',      lat: 31.8044,   lng: 34.6553  },
+    jerusalem:  { name: 'ירושלים',    lat: 31.7683,   lng: 35.2137  },
+    telaviv:    { name: 'תל אביב',    lat: 32.0853,   lng: 34.7818  },
+    haifa:      { name: 'חיפה',        lat: 32.7940,   lng: 34.9896  },
+    beersheva:  { name: 'באר שבע',    lat: 31.2518,   lng: 34.7913  },
+    netanya:    { name: 'נתניה',      lat: 32.3215,   lng: 34.8532  },
+    bneibraq:   { name: 'בני ברק',    lat: 32.0809,   lng: 34.8338  },
+    petahtikva: { name: 'פתח תקווה',  lat: 32.0879,   lng: 34.8878  },
+    paris:      { name: 'פריז',        lat: 48.8570,   lng: 2.3524   },
+    dublin:     { name: 'דבלין',      lat: 53.3493,   lng: -6.2605  },
+    new_york:   { name: 'ניו-יורק',   lat: 40.5799,   lng: -74.5321 },
+    sidney:     { name: 'סידני',      lat: -33.92564, lng: 150.5663 },
+    tokyo:      { name: 'טוקיו',      lat: 35.6768,   lng: 139.7638 }
+};
+
+const HEBREW_DAYS = [
+    "יום ראשון", "יום שני", "יום שלישי", "יום רביעי",
+    "יום חמישי", "יום שישי", "שבת"
+];
+
+const PARASHA_RANGES = {
+    "Parashat Bereshit":         { book: "Genesis",      hebrewBook: "בראשית", startChapter: 1,  startVerse: 1,  endChapter: 6,  endVerse: 8  },
+    "Parashat Noach":            { book: "Genesis",      hebrewBook: "בראשית", startChapter: 6,  startVerse: 9,  endChapter: 11, endVerse: 32 },
+    "Parashat Lech-Lecha":       { book: "Genesis",      hebrewBook: "בראשית", startChapter: 12, startVerse: 1,  endChapter: 17, endVerse: 27 },
+    "Parashat Vayera":           { book: "Genesis",      hebrewBook: "בראשית", startChapter: 18, startVerse: 1,  endChapter: 22, endVerse: 24 },
+    "Parashat Chayei Sara":      { book: "Genesis",      hebrewBook: "בראשית", startChapter: 23, startVerse: 1,  endChapter: 25, endVerse: 18 },
+    "Parashat Toldot":           { book: "Genesis",      hebrewBook: "בראשית", startChapter: 25, startVerse: 19, endChapter: 28, endVerse: 9  },
+    "Parashat Vayetzei":         { book: "Genesis",      hebrewBook: "בראשית", startChapter: 28, startVerse: 10, endChapter: 32, endVerse: 3  },
+    "Parashat Vayishlach":       { book: "Genesis",      hebrewBook: "בראשית", startChapter: 32, startVerse: 4,  endChapter: 36, endVerse: 43 },
+    "Parashat Vayeshev":         { book: "Genesis",      hebrewBook: "בראשית", startChapter: 37, startVerse: 1,  endChapter: 40, endVerse: 23 },
+    "Parashat Miketz":           { book: "Genesis",      hebrewBook: "בראשית", startChapter: 41, startVerse: 1,  endChapter: 44, endVerse: 17 },
+    "Parashat Vayigash":         { book: "Genesis",      hebrewBook: "בראשית", startChapter: 44, startVerse: 18, endChapter: 47, endVerse: 27 },
+    "Parashat Vayechi":          { book: "Genesis",      hebrewBook: "בראשית", startChapter: 47, startVerse: 28, endChapter: 50, endVerse: 26 },
+    "Parashat Shemot":           { book: "Exodus",       hebrewBook: "שמות",   startChapter: 1,  startVerse: 1,  endChapter: 6,  endVerse: 1  },
+    "Parashat Vaera":            { book: "Exodus",       hebrewBook: "שמות",   startChapter: 6,  startVerse: 2,  endChapter: 9,  endVerse: 35 },
+    "Parashat Bo":               { book: "Exodus",       hebrewBook: "שמות",   startChapter: 10, startVerse: 1,  endChapter: 13, endVerse: 16 },
+    "Parashat Beshalach":        { book: "Exodus",       hebrewBook: "שמות",   startChapter: 13, startVerse: 17, endChapter: 17, endVerse: 16 },
+    "Parashat Yitro":            { book: "Exodus",       hebrewBook: "שמות",   startChapter: 18, startVerse: 1,  endChapter: 20, endVerse: 23 },
+    "Parashat Mishpatim":        { book: "Exodus",       hebrewBook: "שמות",   startChapter: 21, startVerse: 1,  endChapter: 24, endVerse: 18 },
+    "Parashat Terumah":          { book: "Exodus",       hebrewBook: "שמות",   startChapter: 25, startVerse: 1,  endChapter: 27, endVerse: 19 },
+    "Parashat Tetzaveh":         { book: "Exodus",       hebrewBook: "שמות",   startChapter: 27, startVerse: 20, endChapter: 30, endVerse: 10 },
+    "Parashat Ki Tisa":          { book: "Exodus",       hebrewBook: "שמות",   startChapter: 30, startVerse: 11, endChapter: 34, endVerse: 35 },
+    "Parashat Vayakhel":         { book: "Exodus",       hebrewBook: "שמות",   startChapter: 35, startVerse: 1,  endChapter: 38, endVerse: 20 },
+    "Parashat Pekudei":          { book: "Exodus",       hebrewBook: "שמות",   startChapter: 38, startVerse: 21, endChapter: 40, endVerse: 38 },
+    "Parashat Vayakhel-Pekudei": { book: "Exodus",       hebrewBook: "שמות",   startChapter: 35, startVerse: 1,  endChapter: 40, endVerse: 38 },
+    "Parashat Vayikra":          { book: "Leviticus",    hebrewBook: "ויקרא",  startChapter: 1,  startVerse: 1,  endChapter: 5,  endVerse: 26 },
+    "Parashat Tzav":             { book: "Leviticus",    hebrewBook: "ויקרא",  startChapter: 6,  startVerse: 1,  endChapter: 8,  endVerse: 36 },
+    "Parashat Shmini":           { book: "Leviticus",    hebrewBook: "ויקרא",  startChapter: 9,  startVerse: 1,  endChapter: 11, endVerse: 47 },
+    "Parashat Tazria":           { book: "Leviticus",    hebrewBook: "ויקרא",  startChapter: 12, startVerse: 1,  endChapter: 13, endVerse: 59 },
+    "Parashat Metzora":          { book: "Leviticus",    hebrewBook: "ויקרא",  startChapter: 14, startVerse: 1,  endChapter: 15, endVerse: 33 },
+    "Parashat Tazria-Metzora":   { book: "Leviticus",    hebrewBook: "ויקרא",  startChapter: 12, startVerse: 1,  endChapter: 15, endVerse: 33 },
+    "Parashat Achrei Mot":       { book: "Leviticus",    hebrewBook: "ויקרא",  startChapter: 16, startVerse: 1,  endChapter: 18, endVerse: 30 },
+    "Parashat Kedoshim":         { book: "Leviticus",    hebrewBook: "ויקרא",  startChapter: 19, startVerse: 1,  endChapter: 20, endVerse: 27 },
+    "Parashat Achrei Mot-Kedoshim": { book: "Leviticus", hebrewBook: "ויקרא",  startChapter: 16, startVerse: 1,  endChapter: 20, endVerse: 27 },
+    "Parashat Emor":             { book: "Leviticus",    hebrewBook: "ויקרא",  startChapter: 21, startVerse: 1,  endChapter: 24, endVerse: 23 },
+    "Parashat Behar":            { book: "Leviticus",    hebrewBook: "ויקרא",  startChapter: 25, startVerse: 1,  endChapter: 26, endVerse: 2  },
+    "Parashat Bechukotai":       { book: "Leviticus",    hebrewBook: "ויקרא",  startChapter: 26, startVerse: 3,  endChapter: 27, endVerse: 34 },
+    "Parashat Behar-Bechukotai": { book: "Leviticus",    hebrewBook: "ויקרא",  startChapter: 25, startVerse: 1,  endChapter: 27, endVerse: 34 },
+    "Parashat Bamidbar":         { book: "Numbers",      hebrewBook: "במדבר",  startChapter: 1,  startVerse: 1,  endChapter: 4,  endVerse: 20 },
+    "Parashat Nasso":            { book: "Numbers",      hebrewBook: "במדבר",  startChapter: 4,  startVerse: 21, endChapter: 7,  endVerse: 89 },
+    "Parashat Beha'alotcha":     { book: "Numbers",      hebrewBook: "במדבר",  startChapter: 8,  startVerse: 1,  endChapter: 12, endVerse: 16 },
+    "Parashat Sh'lach":          { book: "Numbers",      hebrewBook: "במדבר",  startChapter: 13, startVerse: 1,  endChapter: 15, endVerse: 41 },
+    "Parashat Korach":           { book: "Numbers",      hebrewBook: "במדבר",  startChapter: 16, startVerse: 1,  endChapter: 18, endVerse: 32 },
+    "Parashat Chukat":           { book: "Numbers",      hebrewBook: "במדבר",  startChapter: 19, startVerse: 1,  endChapter: 22, endVerse: 1  },
+    "Parashat Balak":            { book: "Numbers",      hebrewBook: "במדבר",  startChapter: 22, startVerse: 2,  endChapter: 25, endVerse: 9  },
+    "Parashat Chukat-Balak":     { book: "Numbers",      hebrewBook: "במדבר",  startChapter: 19, startVerse: 1,  endChapter: 25, endVerse: 9  },
+    "Parashat Pinchas":          { book: "Numbers",      hebrewBook: "במדבר",  startChapter: 25, startVerse: 10, endChapter: 30, endVerse: 1  },
+    "Parashat Matot":            { book: "Numbers",      hebrewBook: "במדבר",  startChapter: 30, startVerse: 2,  endChapter: 32, endVerse: 42 },
+    "Parashat Masei":            { book: "Numbers",      hebrewBook: "במדבר",  startChapter: 33, startVerse: 1,  endChapter: 36, endVerse: 13 },
+    "Parashat Matot-Masei":      { book: "Numbers",      hebrewBook: "במדבר",  startChapter: 30, startVerse: 2,  endChapter: 36, endVerse: 13 },
+    "Parashat Devarim":          { book: "Deuteronomy",  hebrewBook: "דברים",  startChapter: 1,  startVerse: 1,  endChapter: 3,  endVerse: 22 },
+    "Parashat Vaetchanan":       { book: "Deuteronomy",  hebrewBook: "דברים",  startChapter: 3,  startVerse: 23, endChapter: 7,  endVerse: 11 },
+    "Parashat Eikev":            { book: "Deuteronomy",  hebrewBook: "דברים",  startChapter: 7,  startVerse: 12, endChapter: 11, endVerse: 25 },
+    "Parashat Re'eh":            { book: "Deuteronomy",  hebrewBook: "דברים",  startChapter: 11, startVerse: 26, endChapter: 16, endVerse: 17 },
+    "Parashat Shoftim":          { book: "Deuteronomy",  hebrewBook: "דברים",  startChapter: 16, startVerse: 18, endChapter: 21, endVerse: 9  },
+    "Parashat Ki Teitzei":       { book: "Deuteronomy",  hebrewBook: "דברים",  startChapter: 21, startVerse: 10, endChapter: 25, endVerse: 19 },
+    "Parashat Ki Tavo":          { book: "Deuteronomy",  hebrewBook: "דברים",  startChapter: 26, startVerse: 1,  endChapter: 29, endVerse: 8  },
+    "Parashat Nitzavim":         { book: "Deuteronomy",  hebrewBook: "דברים",  startChapter: 29, startVerse: 9,  endChapter: 30, endVerse: 20 },
+    "Parashat Vayeilech":        { book: "Deuteronomy",  hebrewBook: "דברים",  startChapter: 31, startVerse: 1,  endChapter: 31, endVerse: 30 },
+    "Parashat Nitzavim-Vayeilech":{ book: "Deuteronomy", hebrewBook: "דברים",  startChapter: 29, startVerse: 9,  endChapter: 31, endVerse: 30 },
+    "Parashat Ha'azinu":         { book: "Deuteronomy",  hebrewBook: "דברים",  startChapter: 32, startVerse: 1,  endChapter: 32, endVerse: 52 }
+};
+
+/* ─────────────────────────────────────────────────────────────────
+   UTILITY FUNCTIONS
+───────────────────────────────────────────────────────────────── */
+
+function parseTime(timeStr, baseDate) {
+    if (!timeStr) return new Date();
+    const [time, period] = timeStr.split(' ');
+    let [hours, minutes, seconds] = time.split(':').map(Number);
+    if (period === 'PM' && hours !== 12) hours += 12;
+    if (period === 'AM' && hours === 12) hours = 0;
+    const d = new Date(baseDate);
+    d.setHours(hours, minutes, seconds, 0);
+    return d;
+}
+
+function formatTime(d) {
+    return d.toLocaleTimeString('fr-FR', {
+        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+    });
+}
+
+function getLocalISODate(date) {
+    const year  = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day   = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function addDays(date, days) {
+    const d = new Date(date);
+    d.setDate(d.getDate() + days);
+    return d;
+}
+
+function getWeatherForecast(weatherRes) {
+    const hourly = weatherRes?.hourly;
+    if (!hourly?.time || !hourly?.temperature_2m || !hourly?.weather_code) return null;
+    const WANTED_HOURS = [6, 12, 18];
+    const LABELS = { 6: 'בוקר', 12: 'צהריים', 18: 'ערב' };
+    const byDate = {};
+    for (let i = 0; i < hourly.time.length; i++) {
+        const dt   = new Date(hourly.time[i]);
+        const date = hourly.time[i].slice(0, 10);
+        const hour = dt.getHours();
+        if (!WANTED_HOURS.includes(hour)) continue;
+        if (!byDate[date]) byDate[date] = {};
+        byDate[date][hour] = { temp: Math.round(hourly.temperature_2m[i]), code: hourly.weather_code[i], label: LABELS[hour] };
+    }
+    const dates = Object.keys(byDate).sort().slice(0, 3);
+    return {
+        weather7h:  byDate[dates[0]]?.[6]  || null,
+        weather12h: byDate[dates[0]]?.[12] || null,
+        forecast: dates.slice(1).map(date => ({
+            date,
+            slots: WANTED_HOURS.map(h => byDate[date]?.[h] || null)
+        }))
+    };
+}
+
+function getWeatherDesc(code) {
+    if (!code && code !== 0) return '';
+    if (code <= 3)                                                             return 'בהיר';
+    if (code >= 45 && code <= 48)                                              return 'ערפל';
+    if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82))             return 'גשום';
+    if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86))             return 'שלג';
+    if (code >= 95 && code <= 99)                                              return 'סוער';
+    return 'מעונן';
+}
+
+function toHebrewNumber(num) {
+    const ones = ["","א","ב","ג","ד","ה","ו","ז","ח","ט"];
+    const tens = ["","י","כ","ל","מ","נ","ס","ע","פ","צ"];
+    if (num === 15) return "טו";
+    if (num === 16) return "טז";
+    if (num < 10)   return ones[num];
+    if (num < 100)  return `${tens[Math.floor(num/10)]}${ones[num%10]}`;
+    return String(num);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   API: RANDOM PASUK
+───────────────────────────────────────────────────────────────── */
+
+async function fetchRandomPasukForParasha(parashaTitle) {
+    const fallback = {
+        hebrewRef: 'פסוק',
+        text: 'הפסוק האקראי יופיע כאן כאשר החיבור לספריא זמין'
+    };
+
+    try {
+        const range = PARASHA_RANGES[parashaTitle];
+        if (!range) return fallback;
+
+        const chapter = Math.floor(Math.random() * (range.endChapter - range.startChapter + 1)) + range.startChapter;
+        let verses = [];
+
+        // API principale: Sefaria v3.
+        try {
+            const res = await fetch(`https://www.sefaria.org/api/v3/texts/${range.book}.${chapter}?version=source&return_format=text_only`);
+            const json = await res.json();
+            verses = json?.versions?.[0]?.text || [];
+        } catch (e) {
+            console.warn('Sefaria v3 failed:', e);
+        }
+
+        // Fallback API: Sefaria v2 si le format v3 change ou ne répond pas.
+        if (!Array.isArray(verses) || verses.length === 0) {
+            try {
+                const res = await fetch(`https://www.sefaria.org/api/texts/${range.book}.${chapter}?context=0&commentary=0`);
+                const json = await res.json();
+                verses = json?.he || json?.text || [];
+            } catch (e) {
+                console.warn('Sefaria v2 failed:', e);
+            }
+        }
+
+        if (!Array.isArray(verses) || verses.length === 0) return fallback;
+
+        let minVerse = 1;
+        let maxVerse = verses.length;
+        if (chapter === range.startChapter) minVerse = range.startVerse;
+        if (chapter === range.endChapter) maxVerse = Math.min(range.endVerse, verses.length);
+
+        const validVerses = verses
+            .map((text, index) => ({
+                verse: index + 1,
+                text: typeof text === 'string'
+                    ? text.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim()
+                    : ''
+            }))
+            .filter(v => v.verse >= minVerse && v.verse <= maxVerse && v.text.length > 0);
+
+        if (!validVerses.length) return fallback;
+
+        const picked = validVerses[Math.floor(Math.random() * validVerses.length)];
+        return {
+            hebrewRef: `${range.hebrewBook} ${toHebrewNumber(chapter)}:${toHebrewNumber(picked.verse)}`,
+            text: picked.text
+        };
+    } catch (e) {
+        console.error('Pasuk error:', e);
+        return fallback;
+    }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   CENTER CLOCK COMPONENT  — grande montre analogique au centre
+───────────────────────────────────────────────────────────────── */
+function CenterClock({ curTime, nextZman, countdownData }) {
+    const canvasRef = useRef(null);
+    const initialized = useRef(false);
+
+    useEffect(() => {
+        if (initialized.current) return;
+
+/*Taile de la montre*/
+        const timer = setTimeout(() => {
+            if (window.initSuisseClock && canvasRef.current) {
+                const size = Math.round(Math.min(
+                    window.innerHeight * 0.88,
+                    window.innerWidth * 0.68
+                ));
+
+                window.initSuisseClock('center-clock-canvas', size);
+                initialized.current = true;
+            }
+        }, 100);
+
+        return () => clearTimeout(timer);
+    }, []);
+
+    return (
+        <div
+			className="w-full h-full flex items-center justify-center gap-12 px-8"
+		style={{
+			direction: 'ltr',
+			transform: 'translate(170px, -50px)'
+		}}
+		>
+
+            {/* COLONNE GAUCHE : NEXT ZMAN / COUNTDOWN */}
+            <div className="flex flex-col items-center justify-center shrink-0" style={{ width: '360px', transform: 'translateX(90px)' }}>
+
+                {!countdownData && nextZman ? (
+					<div className="text-center">
+						<div className="text-white/40 text-5xl md:text-7xl font-black tracking-wide">
+							{nextZman.label}
+						</div>
+
+						<div className="text-yellow-400 digital-font text-7xl md:text-[8rem] font-black mt-4">
+							{nextZman.time.slice(0, 5)}
+						</div>
+					</div>
+                ) : null}
+
+                {countdownData && !countdownData.isProgressBar ? (
+                    <div className={`font-black text-center animate-pulse ${countdownData.colorClass}`}>
+                        <div className="text-5xl md:text-7xl mb-4">
+                            {nextZman?.label}
+                        </div>
+
+                        <div className="text-4xl md:text-5xl text-white mb-4">
+                            בעוד
+                        </div>
+
+                        <div className="digital-font text-7xl md:text-[8rem]">
+                            {countdownData.timeString}
+                        </div>
+                    </div>
+                ) : null}
+
+                {countdownData && countdownData.isProgressBar ? (
+                    <div className="text-center animate-pulse">
+                        <div className="text-blue-400 text-5xl md:text-7xl font-black">
+                            {countdownData.label}
+                        </div>
+
+                        <div className="text-blue-300 text-3xl md:text-5xl font-black mt-4">
+                            זמן הגיע
+                        </div>
+                    </div>
+                ) : null}
+
+            </div>
+
+            {/* COLONNE DROITE : MONTRE SEULE */}
+			<div
+				className="w-full h-full flex items-center justify-center gap-12 px-8">
+                <canvas
+                    id="center-clock-canvas"
+                    ref={canvasRef}
+                    style={{ display: 'block' }}
+                />
+            </div>
+
+        </div>
+    );
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   APP COMPONENT
+───────────────────────────────────────────────────────────────── */
+
+function App() {
+    const [now,          setNow]          = useState(new Date());
+    const [data,         setData]         = useState(null);
+    const [zmanim,       setZmanim]       = useState([]);
+    const [loading,      setLoading]      = useState(true);
+    const [showSettings, setShowSettings] = useState(false);
+    const [weather,      setWeather]      = useState(null);
+    const [randomPasuk,  setRandomPasuk]  = useState(null);
+
+    const [selectedCity, setSelectedCity] = useState(() => {
+        const saved = localStorage.getItem('selectedCity_v1');
+        return (saved && CITIES[saved]) ? saved : 'ashdod';
+    });
+
+    const [visibleIds, setVisibleIds] = useState(() => {
+        const saved = localStorage.getItem('visibleZmanim_v4');
+        return saved ? JSON.parse(saved) : [
+            'alot','sunrise','shema','tefillah','chatzot',
+            'mincha_g','plag','shkia','tzeit','chatzot_l'
+        ];
+    });
+
+    const [reminders, setReminders] = useState(() => {
+        const saved = localStorage.getItem('zmanReminders_v4');
+        return saved ? JSON.parse(saved) : [];
+    });
+
+    useEffect(() => { localStorage.setItem('visibleZmanim_v4', JSON.stringify(visibleIds)); }, [visibleIds]);
+    useEffect(() => { localStorage.setItem('zmanReminders_v4', JSON.stringify(reminders)); }, [reminders]);
+    useEffect(() => { localStorage.setItem('selectedCity_v1', selectedCity); }, [selectedCity]);
+
+    const fetchData = useCallback(async () => {
+        try {
+            setLoading(true);
+            const coords = CITIES[selectedCity];
+            if (!coords) { setLoading(false); return; }
+
+            const nowLocal     = new Date();
+            const civilDate    = new Date(nowLocal);
+            const civilIso     = getLocalISODate(civilDate);
+            const tomorrowDate = addDays(civilDate, 1);
+            const tomorrowIso  = getLocalISODate(tomorrowDate);
+
+            const solarRes = await fetch(
+                `https://api.sunrisesunset.io/json?lat=${coords.lat}&lng=${coords.lng}&date=${civilIso}`
+            ).then(r => r.json());
+
+            const solar   = solarRes.results;
+            const sunrise = parseTime(solar.sunrise, civilDate);
+            const sunset  = parseTime(solar.sunset,  civilDate);
+            const dawn    = parseTime(solar.dawn,    civilDate);
+            const dusk    = parseTime(solar.dusk,    civilDate);
+            const noon    = parseTime(solar.solar_noon, civilDate);
+
+            const shaah        = (sunset.getTime() - sunrise.getTime()) / 12;
+            const chatzotLaila = new Date(noon.getTime() + 12 * 60 * 60 * 1000);
+
+            const isAfterTzeit  = nowLocal >= dusk;
+            const effectiveDate = isAfterTzeit ? tomorrowDate : civilDate;
+            const effectiveIso  = isAfterTzeit ? tomorrowIso  : civilIso;
+
+            const daysUntilSat = (6 - effectiveDate.getDay() + 7) % 7;
+            const sat    = addDays(effectiveDate, daysUntilSat);
+            const satIso = getLocalISODate(sat);
+
+            const y = effectiveDate.getFullYear();
+            const m = effectiveDate.getMonth() + 1;
+            const d = effectiveDate.getDate();
+
+            const [hebDateRes, dailyRes, weatherRes] = await Promise.all([
+                fetch(`https://www.hebcal.com/converter?cfg=json&gy=${y}&gm=${m}&gd=${d}&g2h=1`).then(r => r.json()),
+                fetch(`https://www.hebcal.com/hebcal?v=1&cfg=json&maj=on&min=on&mod=on&nx=on&start=${civilIso}&end=${satIso}&ss=on&mf=on&c=off&geo=none&F=on&heb=on&s=on&o=on&i=on`).then(r => r.json()),
+                fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lng}&hourly=temperature_2m,weather_code&timezone=auto&forecast_days=3`).then(r => r.json())
+            ]);
+
+            setWeather(getWeatherForecast(weatherRes));
+
+            const items = dailyRes.items || [];
+            const daf   = items.find(i => i.category === 'dafyomi' && i.date === effectiveIso)?.hebrew || "---";
+
+            const parashaEvent = items.find(i => i.category === 'parashat' && i.date === satIso);
+            const parashaHeb   = parashaEvent ? parashaEvent.hebrew.replace('פרשת ','') : "---";
+            const parashaTitle = parashaEvent ? parashaEvent.title : null;
+
+            const specialEvents = items.filter(i =>
+                (i.category === 'holiday' || i.category === 'roshchodesh') && i.date === effectiveIso
+            );
+            const holidayInfo = specialEvents.map(e => ({
+                text: e.hebrew,
+                isFast: e.subcat === 'fast' || e.title?.toLowerCase().includes('fast') || e.hebrew?.includes('צום') || e.hebrew?.includes('תענית')
+            }));
+
+            const omerItem = items.find(i => i.category === 'omer' && i.date === effectiveIso) || null;
+            const omer     = omerItem?.omer?.count?.he || null;
+
+            const list = [
+                { id:'alot',     label:'עלות השחר',    fullTime: dawn,                                                    time: formatTime(dawn) },
+                { id:'sunrise',  label:'נץ החמה',       fullTime: sunrise,                                                 time: formatTime(sunrise) },
+                { id:'shema',    label:'סוף זמן שמע',   fullTime: new Date(sunrise.getTime() + 3     * shaah),             time: formatTime(new Date(sunrise.getTime() + 3     * shaah)) },
+                { id:'tefillah', label:'סוף זמן תפילה', fullTime: new Date(sunrise.getTime() + 4     * shaah),             time: formatTime(new Date(sunrise.getTime() + 4     * shaah)) },
+                { id:'chatzot',  label:'חצות היום',     fullTime: noon,                                                    time: formatTime(noon) },
+                { id:'mincha_g', label:'מנחה גדולה',    fullTime: new Date(noon.getTime()    + 0.5   * shaah),             time: formatTime(new Date(noon.getTime()    + 0.5   * shaah)) },
+                { id:'plag',     label:'פלג המנחה',     fullTime: new Date(sunrise.getTime() + 10.75 * shaah),             time: formatTime(new Date(sunrise.getTime() + 10.75 * shaah)) },
+                { id:'shkia',    label:'שקיעה',          fullTime: sunset,                                                  time: formatTime(sunset) },
+                { id:'tzeit',    label:'צאת הכוכבים',   fullTime: dusk,                                                    time: formatTime(dusk) },
+                { id:'chatzot_l',label:'חצות לילה',     fullTime: chatzotLaila,                                            time: formatTime(chatzotLaila) }
+            ];
+
+            setData({
+                hebrewDate:    hebDateRes.hebrew,
+                gregorianDate: `${String(effectiveDate.getDate()).padStart(2,'0')}.${String(effectiveDate.getMonth()+1).padStart(2,'0')}.${effectiveDate.getFullYear()}`,
+                daf, parashaHeb, parashaTitle, holidays: holidayInfo, omer
+            });
+            setZmanim(list);
+            setLoading(false);
+        } catch (e) {
+            console.error("API Error:", e);
+            setLoading(false);
+        }
+    }, [selectedCity]);
+
+    const refreshPasuk = useCallback(async (parashaTitle) => {
+        if (!parashaTitle) { setRandomPasuk(null); return; }
+        const pasuk = await fetchRandomPasukForParasha(parashaTitle);
+        setRandomPasuk(pasuk);
+    }, []);
+
+    useEffect(() => { fetchData(); }, [fetchData]);
+
+    useEffect(() => {
+        if (!data?.parashaTitle) return;
+        refreshPasuk(data.parashaTitle);
+        const interval = setInterval(() => refreshPasuk(data.parashaTitle), 5 * 60 * 1000);
+        return () => clearInterval(interval);
+    }, [data?.parashaTitle, refreshPasuk]);
+
+    useEffect(() => {
+        if (!zmanim.length) return;
+        const tzeitZman = zmanim.find(z => z.id === 'tzeit');
+        if (!tzeitZman) return;
+        const msUntilTzeit = tzeitZman.fullTime.getTime() - Date.now();
+        if (msUntilTzeit <= 0) return;
+        const timer = setTimeout(() => fetchData(), msUntilTzeit + 1000);
+        return () => clearTimeout(timer);
+    }, [zmanim, fetchData]);
+
+    useEffect(() => {
+        const timer = setInterval(() => setNow(new Date()), 1000);
+        return () => clearInterval(timer);
+    }, []);
+
+    useEffect(() => {
+        let lastCheckedDate = new Date().toDateString();
+        const dayCheckTimer = setInterval(() => {
+            const currentDate = new Date().toDateString();
+            if (currentDate !== lastCheckedDate) { lastCheckedDate = currentDate; fetchData(); }
+        }, 60000);
+        return () => clearInterval(dayCheckTimer);
+    }, [fetchData]);
+
+    const nextZman = useMemo(() => {
+        if (!zmanim.length) return null;
+        const sorted = [...zmanim].sort((a,b) => a.fullTime - b.fullTime);
+        return sorted.find(z => z.fullTime > now) || sorted[0];
+    }, [zmanim, now]);
+
+    const activeZman = useMemo(() => {
+        const sorted = [...zmanim].sort((a,b) => a.fullTime - b.fullTime);
+        return sorted.find(z => {
+            const diff = now.getTime() - z.fullTime.getTime();
+            return diff > 0 && diff <= 30000;
+        }) || null;
+    }, [zmanim, now]);
+
+    const countdownData = useMemo(() => {
+        if (activeZman) return { isProgressBar: true, colorClass: "text-blue-500 glow-blue", label: activeZman.label, time: activeZman.time };
+        if (!nextZman) return null;
+        const diff = nextZman.fullTime.getTime() - now.getTime();
+        if (diff > 0 && diff <= 54000000) {
+            const m = Math.floor(diff / 60000);
+            const s = Math.floor((diff % 60000) / 1000);
+            const timeString = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+            let colorClass = "text-green-500 glow-green";
+            if (diff <= 60000)       colorClass = "text-red-600 glow-red";
+            else if (diff <= 300000) colorClass = "text-orange-500 glow-orange";
+            return { timeString, colorClass, isProgressBar: false };
+        }
+        return null;
+    }, [nextZman, activeZman, now]);
+
+    const visibleZmanim = zmanim
+        .filter(z => visibleIds.includes(z.id))
+        .sort((a,b) => a.fullTime - b.fullTime);
+
+    const curTime = formatTime(now);
+
+    if (loading) {
+        return (
+            <div className="h-screen flex items-center justify-center bg-black">
+                <div className="text-yellow-400 font-bold text-2xl animate-pulse digital-font tracking-[0.5em]">LOADING...</div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="h-screen flex flex-col justify-between px-6 py-3 overflow-hidden bg-black text-white">
+            {/* ── HEADER : informations réparties gauche / centre / droite ── */}
+            <header className="w-full border-b border-white/10 pb-2 pt-2 shrink-0 relative z-10">
+                <div className="header-grid">
+
+                    {/* Bloc gauche large : Parasha + Omer + Pasuk aléatoire */}
+                    <div className="header-card parasha-card">
+                        <div className="flex items-start justify-between gap-4">
+                            <div className="min-w-0 flex-1">
+                                <div className="header-title-line text-sky-100 text-2xl md:text-3xl font-black mb-1">
+                                    {HEBREW_DAYS[now.getDay()]} -{" "}
+                                    <span className="text-sky-400 text-3xl md:text-4xl font-black leading-none">
+                                        {data?.parashaHeb || "---"}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {data?.holidays?.length > 0 && (
+                                <div className="flex flex-col items-end gap-1 shrink-0">
+                                    {data.holidays.map((h, i) => (
+                                        <div
+                                            key={i}
+                                            className={`text-sm font-black px-3 py-1 rounded-full whitespace-nowrap ${
+                                                h.isFast ? 'bg-red-500/20 text-red-400' : 'bg-yellow-400/20 text-yellow-300'
+                                            }`}
+                                        >
+                                            {h.text}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Omer : affiché seulement pendant la période du Omer */}
+                        {data?.omer && (
+                            <div className="omer-ticker mb-1">
+                                <div className="omer-track">
+                                    <div className="omer-item text-purple-400 text-base md:text-xl font-black">{data.omer}</div>
+                                    <div className="omer-item text-purple-400 text-base md:text-xl font-black" aria-hidden="true">{data.omer}</div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Pasuk : toujours visible. Si l'API échoue, randomPasuk reçoit un fallback. */}
+                        <div className="pasuk-ticker" title={`${randomPasuk?.hebrewRef || 'פסוק'} — ${randomPasuk?.text || 'טעינה...'}`}>
+                            <div className="pasuk-track">
+                                <div className="pasuk-item pasuk-text">
+                                    <span className="pasuk-ref">{randomPasuk?.hebrewRef || 'פסוק'}</span>
+                                    <span>—</span>
+                                    <span className="mr-2">{randomPasuk?.text || 'טעינת פסוק אקראי...'}</span>
+                                </div>
+                                <div className="pasuk-item pasuk-text" aria-hidden="true">
+                                    <span className="pasuk-ref">{randomPasuk?.hebrewRef || 'פסוק'}</span>
+                                    <span>—</span>
+                                    <span className="mr-2">{randomPasuk?.text || 'טעינת פסוק אקראי...'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Bloc gauche secondaire : météo courte */}
+                    <div className="header-card">
+                        {weather?.weather7h && weather?.weather12h && (
+                            <div className="flex gap-3 items-center justify-center h-full">
+                                <div className="text-center">
+                                    <div className="text-cyan-400 text-3xl md:text-4xl font-black">{weather.weather7h.temp}°</div>
+                                    <div className="text-cyan-300/60 text-sm md:text-base font-bold">{getWeatherDesc(weather.weather7h.code)}</div>
+                                </div>
+                                <div className="text-center">
+                                    <div className="text-orange-400 text-3xl md:text-4xl font-black">{weather.weather12h.temp}°</div>
+                                    <div className="text-orange-300/60 text-sm md:text-base font-bold">{getWeatherDesc(weather.weather12h.code)}</div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Centre volontairement vide : réserve visuelle pour la grande montre */}
+                    <div className="header-spacer"></div>
+
+
+{/* Bloc droite : date + Daf Yomi */}
+					<div className="header-card">
+
+						{/* Date hébraïque */}
+						<div className="text-sky-100 text-2xl md:text-3xl font-black whitespace-nowrap overflow-hidden text-ellipsis mb-1">
+							{data?.hebrewDate || "---"}
+						</div>
+
+						{/* Date civile */}
+						<div className="text-white/40 text-lg md:text-2xl digital-font font-bold tracking-wider mb-3">
+							{data?.gregorianDate || "---"}
+						</div>
+
+						{/* Daf Yomi */}
+						<div className="border-t border-white/10 pt-2">
+							<div className="text-white/30 text-xs uppercase tracking-widest mb-1">
+								דף היומי
+							</div>
+
+							<div className="text-green-400 text-xl md:text-2xl font-black whitespace-nowrap overflow-hidden text-ellipsis">
+								{data?.daf || "---"}
+							</div>
+						</div>
+
+					</div>
+
+                </div>
+            </header>
+
+            {/* ── MAIN : grande montre analogique ── */}
+			<main className="flex-grow flex items-center justify-center relative min-h-0 overflow-visible pt-0 -mt-10 z-20">
+				<CenterClock curTime={curTime} nextZman={nextZman} countdownData={countdownData} />
+			</main>
+
+            {/* ── FOOTER: ZMANIM STRIP ── */}
+            <footer className="w-full footer-gradient backdrop-blur-lg rounded-2xl py-1 border border-white/10 shadow-2xl shrink-0">
+                <div className="flex flex-row-reverse flex-wrap gap-[2px] justify-center px-1">
+                    {visibleZmanim.map(z => {
+                        const isActive    = nextZman?.id === z.id;
+                        const hasReminder = reminders.includes(z.id);
+                        return (
+                            <div
+                                key={z.id}
+                                onClick={() => setReminders(prev =>
+                                    prev.includes(z.id) ? prev.filter(i => i !== z.id) : [...prev, z.id]
+                                )}
+                                className={`zman-card rounded-lg px-2 py-1 flex flex-col items-center min-w-[72px] md:min-w-[110px] flex-grow md:flex-grow-0 transition-all ${isActive ? 'active-zman' : ''} ${z.fullTime < now ? 'opacity-50' : ''}`}
+                            >
+                                {hasReminder && <i className="fa-solid fa-bell reminder-icon"></i>}
+                                <span className="text-[10px] md:text-[16px] text-white font-black mb-1 whitespace-nowrap uppercase tracking-tighter">{z.label}</span>
+                                <span className={`text-lg md:text-2xl digital-font font-bold tracking-tight ${isActive ? 'text-yellow-400' : 'text-white'}`}>
+                                    {z.time.slice(0,5)}
+                                </span>
+                            </div>
+                        );
+                    })}
+                </div>
+                <div className="hidden text-white/10 uppercase tracking-[0.6em] mt-2 font-bold">
+                    {CITIES[selectedCity].name} Dashboard • Method Gra • GPS: {CITIES[selectedCity].lat}, {CITIES[selectedCity].lng}
+                </div>
+            </footer>
+
+            {/* ── SETTINGS MODAL ── */}
+            {showSettings && (
+                <div className="fixed inset-0 modal-overlay z-50 flex items-center justify-center p-6" onClick={() => setShowSettings(false)}>
+                    <div
+                        className="bg-[#0a0a0a] border-2 border-white/20 rounded-[3rem] p-10 max-w-3xl w-full shadow-[0_0_100px_rgba(251,206,7,0.2)] max-h-[90vh] overflow-y-auto no-scrollbar"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <h2 className="text-3xl font-black mb-8 text-yellow-400 text-center uppercase tracking-widest border-b-2 border-white/10 pb-4">
+                            <i className="fa-solid fa-sliders mr-3"></i>Configuration
+                        </h2>
+                        <div className="mb-8">
+                            <h3 className="text-xl font-black text-sky-400 mb-4 text-center"><i className="fa-solid fa-location-dot ml-2"></i>בחר עיר</h3>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                {Object.entries(CITIES).map(([key, city]) => (
+                                    <button key={key} onClick={() => setSelectedCity(key)}
+                                        className={`p-4 rounded-xl font-bold text-lg transition-all ${selectedCity === key ? 'bg-sky-500 text-white border-2 border-sky-300 shadow-lg shadow-sky-500/50' : 'bg-white/5 text-white/60 border border-white/10 hover:bg-white/10'}`}>
+                                        {city.name}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-black text-yellow-400 mb-4 text-center"><i className="fa-solid fa-clock ml-2"></i>זמנים להצגה</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                {zmanim.map(z => (
+                                    <label key={z.id} className={`flex items-center justify-between gap-4 p-5 rounded-2xl cursor-pointer transition-all ${visibleIds.includes(z.id) ? 'bg-white/10 border-2 border-white/20' : 'bg-white/5 border border-transparent opacity-50'}`}>
+                                        <span className="text-base md:text-lg font-bold">{z.label}</span>
+                                        <input type="checkbox" checked={visibleIds.includes(z.id)}
+                                            onChange={() => setVisibleIds(prev => prev.includes(z.id) ? prev.filter(i => i !== z.id) : [...prev, z.id])}
+                                            className="w-6 h-6 accent-yellow-400 rounded-lg cursor-pointer" />
+                                    </label>
+                                ))}
+                            </div>
+                        </div>
+                        <button onClick={() => setShowSettings(false)}
+                            className="mt-8 w-full bg-yellow-400 text-black py-4 rounded-2xl font-black text-xl hover:bg-yellow-300 transition-all uppercase shadow-lg shadow-yellow-400/30 hover:shadow-yellow-400/50">
+                            <i className="fa-solid fa-check mr-2"></i>Valider et Fermer
+                        </button>
+                    </div>
+                </div>
+            )}
+
+        </div>
+    );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+</body>
+</html>
