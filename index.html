@@ -32,7 +32,7 @@
            droite = Date/Daf. Le centre reste vide pour ne jamais compresser la montre. */
         .header-grid {
             display: grid;
-            grid-template-columns: minmax(520px, 1.55fr) 240px minmax(260px, 1fr) 280px 220px;
+            grid-template-columns: minmax(520px, 1.55fr) 240px minmax(360px, 1fr) 300px;
             gap: 12px;
             align-items: stretch;
             direction: ltr;
@@ -439,11 +439,12 @@ function CenterClock({ curTime, nextZman, countdownData }) {
     useEffect(() => {
         if (initialized.current) return;
 
+/*Taile de la montre*/
         const timer = setTimeout(() => {
             if (window.initSuisseClock && canvasRef.current) {
                 const size = Math.round(Math.min(
-                    window.innerHeight * 0.78,
-                    window.innerWidth * 0.55
+                    window.innerHeight * 0.88,
+                    window.innerWidth * 0.68
                 ));
 
                 window.initSuisseClock('center-clock-canvas', size);
@@ -455,21 +456,27 @@ function CenterClock({ curTime, nextZman, countdownData }) {
     }, []);
 
     return (
-        <div className="w-full h-full flex items-center justify-center gap-12 px-8" style={{ direction: 'ltr' }}>
+        <div
+			className="w-full h-full flex items-center justify-center gap-12 px-8"
+		style={{
+			direction: 'ltr',
+			transform: 'translate(170px, -50px)'
+		}}
+		>
 
             {/* COLONNE GAUCHE : NEXT ZMAN / COUNTDOWN */}
-            <div className="flex flex-col items-center justify-center shrink-0" style={{ width: '420px' }}>
+            <div className="flex flex-col items-center justify-center shrink-0" style={{ width: '360px', transform: 'translateX(90px)' }}>
 
                 {!countdownData && nextZman ? (
-                    <div className="text-center">
-                        <div className="text-white/40 text-3xl md:text-5xl font-black tracking-wide">
-                            {nextZman.label}
-                        </div>
+					<div className="text-center">
+						<div className="text-white/40 text-5xl md:text-7xl font-black tracking-wide">
+							{nextZman.label}
+						</div>
 
-                        <div className="text-yellow-400 digital-font text-5xl md:text-7xl font-black mt-2">
-                            {nextZman.time.slice(0, 5)}
-                        </div>
-                    </div>
+						<div className="text-yellow-400 digital-font text-7xl md:text-[8rem] font-black mt-4">
+							{nextZman.time.slice(0, 5)}
+						</div>
+					</div>
                 ) : null}
 
                 {countdownData && !countdownData.isProgressBar ? (
@@ -503,7 +510,8 @@ function CenterClock({ curTime, nextZman, countdownData }) {
             </div>
 
             {/* COLONNE DROITE : MONTRE SEULE */}
-            <div className="flex flex-col items-center justify-center">
+			<div
+				className="w-full h-full flex items-center justify-center gap-12 px-8">
                 <canvas
                     id="center-clock-canvas"
                     ref={canvasRef}
@@ -697,7 +705,7 @@ function App() {
         if (activeZman) return { isProgressBar: true, colorClass: "text-blue-500 glow-blue", label: activeZman.label, time: activeZman.time };
         if (!nextZman) return null;
         const diff = nextZman.fullTime.getTime() - now.getTime();
-        if (diff > 0 && diff <= 1800000) {
+        if (diff > 0 && diff <= 54000000) {
             const m = Math.floor(diff / 60000);
             const s = Math.floor((diff % 60000) / 1000);
             const timeString = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
@@ -803,23 +811,32 @@ function App() {
                     {/* Centre volontairement vide : réserve visuelle pour la grande montre */}
                     <div className="header-spacer"></div>
 
-                    {/* Bloc droite : date hébraïque + date civile */}
-                    <div className="header-card">
-                        <div className="text-sky-100 text-2xl md:text-3xl font-black whitespace-nowrap overflow-hidden text-ellipsis mb-1">
-                            {data?.hebrewDate || "---"}
-                        </div>
-                        <div className="text-white/40 text-lg md:text-2xl digital-font font-bold tracking-wider">
-                            {data?.gregorianDate || "---"}
-                        </div>
-                    </div>
 
-                    {/* Bloc droite extrême : Daf Yomi */}
-                    <div className="header-card shrink-0">
-                        <div className="text-white/30 text-base uppercase tracking-widest mb-1">דף היומי</div>
-                        <div className="text-green-400 text-2xl md:text-3xl font-black whitespace-nowrap overflow-hidden text-ellipsis">
-                            {data?.daf || "---"}
-                        </div>
-                    </div>
+{/* Bloc droite : date + Daf Yomi */}
+					<div className="header-card">
+
+						{/* Date hébraïque */}
+						<div className="text-sky-100 text-2xl md:text-3xl font-black whitespace-nowrap overflow-hidden text-ellipsis mb-1">
+							{data?.hebrewDate || "---"}
+						</div>
+
+						{/* Date civile */}
+						<div className="text-white/40 text-lg md:text-2xl digital-font font-bold tracking-wider mb-3">
+							{data?.gregorianDate || "---"}
+						</div>
+
+						{/* Daf Yomi */}
+						<div className="border-t border-white/10 pt-2">
+							<div className="text-white/30 text-xs uppercase tracking-widest mb-1">
+								דף היומי
+							</div>
+
+							<div className="text-green-400 text-xl md:text-2xl font-black whitespace-nowrap overflow-hidden text-ellipsis">
+								{data?.daf || "---"}
+							</div>
+						</div>
+
+					</div>
 
                 </div>
             </header>

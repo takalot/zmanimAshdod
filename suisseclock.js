@@ -29,7 +29,6 @@ window.initSuisseClock = function(canvasId, sizePx) {
     Clock.prototype.drawBezel = function() {
         var cx = this.center.x, cy = this.center.y, r = this.radius;
         var outerR = r * 1.10;
-
         this.ctx.save();
         this.ctx.beginPath();
         this.ctx.arc(cx, cy, outerR, 0, 2 * Math.PI);
@@ -50,14 +49,12 @@ window.initSuisseClock = function(canvasId, sizePx) {
         g.addColorStop(0.80, '#d0d0d0');
         g.addColorStop(0.90, '#ffffff');
         g.addColorStop(1.00, '#b0b0b0');
-
         this.ctx.beginPath();
         this.ctx.arc(cx, cy, outerR, 0, 2 * Math.PI);
         this.ctx.closePath();
         this.ctx.arc(cx, cy, r, 0, 2 * Math.PI, true);
         this.ctx.fillStyle = g;
         this.ctx.fill();
-
         this.ctx.beginPath();
         this.ctx.arc(cx, cy, r, 0, 2 * Math.PI);
         this.ctx.strokeStyle = 'rgba(0,0,0,0.2)';
@@ -72,7 +69,6 @@ window.initSuisseClock = function(canvasId, sizePx) {
         this.ctx.arc(cx, cy, r, 0, 2 * Math.PI);
         this.ctx.fillStyle = '#f0ede6';
         this.ctx.fill();
-
         var radial = this.ctx.createRadialGradient(cx, cy - r * 0.1, 0, cx, cy, r);
         radial.addColorStop(0.0, 'rgba(255,255,255,0.55)');
         radial.addColorStop(0.6, 'rgba(255,255,255,0.0)');
@@ -91,7 +87,6 @@ window.initSuisseClock = function(canvasId, sizePx) {
             var outerD = r * 0.92;
             var innerD = isQuarter ? r * 0.68 : isHour ? r * 0.72 : r * 0.84;
             var lw     = isQuarter ? r * 0.065 : isHour ? r * 0.055 : r * 0.018;
-
             this.ctx.strokeStyle = '#1a1a1a';
             this.ctx.lineWidth   = lw;
             this.ctx.lineCap     = 'butt';
@@ -102,159 +97,133 @@ window.initSuisseClock = function(canvasId, sizePx) {
         }
     };
 
-    /* ── Aiguille HEURE et MINUTE — bout carré, corps épais ── */
-/* ── Aiguilles originales style suisse ── */
-Clock.prototype.drawHand = function(angle, handOptions) {
-    var startX =
-        Math.sin(angle) *
-        (this.radius * handOptions.backwardRadiusRatio) +
-        this.center.x;
+    /* ── Aiguille rectangulaire bout carré ── */
+    Clock.prototype.drawRectHand = function(angle, tipDist, tailDist, width, color) {
+        var cx = this.center.x, cy = this.center.y, r = this.radius;
+        this.ctx.save();
+        this.ctx.translate(cx, cy);
+        this.ctx.rotate(angle);
+        this.ctx.shadowColor   = 'rgba(0,0,0,0.45)';
+        this.ctx.shadowBlur    = r * 0.05;
+        this.ctx.shadowOffsetX = r * 0.01;
+        this.ctx.shadowOffsetY = r * 0.02;
+        this.ctx.fillStyle = color;
+        this.ctx.fillRect(-width * r / 2, -tipDist * r, width * r, (tipDist + tailDist) * r);
+        this.ctx.restore();
+    };
 
-    var startY =
-        Math.cos(angle) *
-        (this.radius * handOptions.backwardRadiusRatio) +
-        this.center.y;
+    /* ── Heure ── */
+    Clock.prototype.drawHourHand = function() {
+        var now   = new Date();
+        var hours = (now.getHours() % 12) + now.getMinutes() / 60 + now.getSeconds() / 3600;
+        var angle = (Math.PI * 2) * (hours / 12);
+        this.drawRectHand(angle, 0.52, 0.14, 0.10, '#1a1a1a');
+    };
 
-    var endX =
-        Math.sin(angle - Math.PI) *
-        (this.radius * handOptions.forwardRadiusRatio) +
-        this.center.x;
-
-    var endY =
-        Math.cos(angle - Math.PI) *
-        (this.radius * handOptions.forwardRadiusRatio) +
-        this.center.y;
-
-    this.ctx.shadowColor   = 'rgba(0,0,0,0.8)';
-    this.ctx.shadowBlur    = this.radius * 0.075;
-    this.ctx.shadowOffsetY = 1;
-
-    this.ctx.strokeStyle = handOptions.color;
-    this.ctx.lineWidth   =
-        handOptions.thicknessRatio * this.radius;
-
-    this.ctx.lineCap = 'but';
-
-    this.ctx.beginPath();
-    this.ctx.moveTo(startX, startY);
-    this.ctx.lineTo(endX, endY);
-    this.ctx.stroke();
-
-    if (handOptions.tipRadiusRatio) {
-        this.ctx.fillStyle = handOptions.color;
-
-        this.ctx.beginPath();
-
-        this.ctx.arc(
-            endX,
-            endY,
-            handOptions.tipRadiusRatio * this.radius,
-            0,
-            2 * Math.PI
-        );
-
-        this.ctx.fill();
-    }
-
-    this.ctx.shadowBlur    = 0;
-    this.ctx.shadowOffsetY = 0;
-
-    if (handOptions.tipRadiusRatio) {
-        this.ctx.beginPath();
-        this.ctx.moveTo(startX, startY);
-        this.ctx.lineTo(endX, endY);
-        this.ctx.stroke();
-    }
-};
-
-Clock.prototype.drawHourHand = function() {
-    var now = new Date();
-
-    var hours =
-        (now.getHours() % 12) +
-        now.getMinutes() / 60 +
-        now.getSeconds() / 3600;
-
-    var angle =
-        (Math.PI * 2) * (-hours / 12);
-
-    this.drawHand(angle, {
-        color: '#1a1a1a',
-        thicknessRatio: 0.08,
-        forwardRadiusRatio: 0.60,
-        backwardRadiusRatio: 0.25
-    });
-};
-
+    /* ── Minute : fixe sur le cran, bond de ~0.12 cran à seconds===0 ── */
 Clock.prototype.drawMinuteHand = function() {
     var now = new Date();
 
     var seconds = now.getSeconds();
-    var milliseconds = now.getMilliseconds();
+    var ms = now.getMilliseconds() / 1000;
 
-    var baseMinutes = now.getMinutes();
+    var minutes = now.getMinutes();
+    var bounce = 0;
 
-    var minuteProgress = 0;
-
+    /*
+      À 59.000 :
+      - la trotteuse repart
+      - la minute fait son bond
+      EN MÊME TEMPS
+    */
     if (seconds === 59) {
-        var t = milliseconds / 1000;
+        var t = ms;
 
-        // effet butée : avance un peu trop vite,
-        // dépasse très légèrement, puis revient en place
-        minuteProgress =
-            t < 0.72
-                ? t / 0.72 * 1.018
-                : 1.018 - ((t - 0.72) / 0.28) * 0.018;
+        if (t < 0.32) {
+            // bond vers le cran suivant + léger dépassement
+            bounce = (t / 0.32) * 1.10;
+        } else if (t < 0.62) {
+            // retour en arrière
+            bounce = 1.10 - ((t - 0.32) / 0.30) * 0.18;
+        } else {
+            // calage exact sur le cran suivant
+            bounce = 0.92 + ((t - 0.62) / 0.38) * 0.08;
+        }
+
+        minutes = minutes + bounce;
     }
 
-    var minutes = baseMinutes + minuteProgress;
-
     var angle =
-        (Math.PI * 2) * (-minutes / 60);
+        (Math.PI * 2) * (minutes / 60);
 
-    this.drawHand(angle, {
-        color: '#1a1a1a',
-        thicknessRatio: 0.06,
-        forwardRadiusRatio: 0.875,
-        backwardRadiusRatio: 0.25
-    });
+    this.drawRectHand(angle, 0.80, 0.16, 0.07, '#1a1a1a');
 };
 
+    /* ── Trotteuse : tourne en continu 0→59, marque une pause à 12h
+       pendant toute la seconde 59, repart à seconds===0 ms>=4ms ── */
 Clock.prototype.drawSecondHand = function() {
-    var now = new Date();
+    var nowMs = Date.now();
 
-    var seconds =
-        now.getSeconds() +
-        now.getMilliseconds() / 1000;
+    /*
+      Cycle décalé :
+      - 59.000 devient le début du cycle
+      - 59.000 → 00.000 = début du tour
+      - 00.000 ne remet PAS la trotteuse à 12h
+    */
+    var cycleMs = (nowMs + 1000) % 60000;
 
-    // Mouvement fluide normal de 0 à 58.5 secondes,
-    // puis arrêt à 12h jusqu'à la seconde suivante.
     var displaySeconds;
 
-    if (seconds >= 58.5) {
-        displaySeconds = 0;
+    if (cycleMs < 58500) {
+        // tour complet en 58.5 secondes
+        displaySeconds = cycleMs / 58500 * 60;
     } else {
-        displaySeconds = seconds / 58.5 * 60;
+        // pause à 12h
+        displaySeconds = 60;
     }
 
     var angle =
-        (Math.PI * 2) * (-displaySeconds / 60);
+        (Math.PI * 2) * (displaySeconds / 60);
 
-    this.drawHand(angle, {
-        color: '#cd151c',
-        thicknessRatio: 0.0075,
-        forwardRadiusRatio: 0.75,
-        backwardRadiusRatio: 0.25,
-        tipRadiusRatio: 0.075
-    });
+    var cx = this.center.x;
+    var cy = this.center.y;
+    var r = this.radius;
+
+    var tipX  = cx + Math.sin(angle) * r * 0.78;
+    var tipY  = cy - Math.cos(angle) * r * 0.78;
+    var tailX = cx - Math.sin(angle) * r * 0.22;
+    var tailY = cy + Math.cos(angle) * r * 0.22;
+
+    this.ctx.save();
+
+    this.ctx.strokeStyle = '#cc1111';
+    this.ctx.lineWidth   = r * 0.022;
+    this.ctx.lineCap     = 'butt';
+    this.ctx.shadowColor = 'rgba(0,0,0,0.35)';
+    this.ctx.shadowBlur  = r * 0.03;
+
+    this.ctx.beginPath();
+    this.ctx.moveTo(tailX, tailY);
+    this.ctx.lineTo(tipX, tipY);
+    this.ctx.stroke();
+
+    var ballR = r * 0.065;
+
+    this.ctx.shadowBlur = 0;
+    this.ctx.fillStyle  = '#cc1111';
+
+    this.ctx.beginPath();
+    this.ctx.arc(tipX, tipY, ballR, 0, 2 * Math.PI);
+    this.ctx.fill();
+
+    this.ctx.restore();
 };
-
     /* ── Centre ── */
     Clock.prototype.drawCenterDot = function() {
         var cx = this.center.x, cy = this.center.y, r = this.radius;
         this.ctx.beginPath();
-        this.ctx.arc(cx, cy, r * 0.030, 0, 2 * Math.PI);
-        this.ctx.fillStyle = '#888';
+        this.ctx.arc(cx, cy, r * 0.028, 0, 2 * Math.PI);
+        this.ctx.fillStyle = '#cc1111';
         this.ctx.fill();
     };
 
