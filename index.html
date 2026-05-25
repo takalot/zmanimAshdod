@@ -12,8 +12,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <!-- Montre suisse -->
-	<canvas id="center-clock-canvas"></canvas>
-    <script src="suisseclock.js" defer></script>
+    <script src="suisseclock.js"></script>
 
     <style>
         /* ─── Base ─────────────────────────────────────────────── */
@@ -706,7 +705,7 @@ function App() {
         if (activeZman) return { isProgressBar: true, colorClass: "text-blue-500 glow-blue", label: activeZman.label, time: activeZman.time };
         if (!nextZman) return null;
         const diff = nextZman.fullTime.getTime() - now.getTime();
-        if (diff > 0 && diff <= 54000000) {
+        if (diff > 0 && diff <= 1800000) {
             const m = Math.floor(diff / 60000);
             const s = Math.floor((diff % 60000) / 1000);
             const timeString = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
